@@ -24,7 +24,7 @@ export default async function Home() {
       <section className="relative overflow-hidden bg-warm-900">
         <div className="bg-craft-texture absolute inset-0 opacity-60" />
 
-        <div className="relative mx-auto max-w-6xl px-6 py-24 text-center sm:px-10 sm:py-32 lg:px-12 lg:py-40">
+        <div className="relative mx-auto max-w-6xl px-6 pt-6 pb-24 text-center sm:px-10 sm:pt-8 sm:pb-32 lg:px-12 lg:pt-10 lg:pb-40">
           {/* Hero Logo + Punchline */}
           <div className="mb-10 flex flex-col items-center gap-5">
             <Image
@@ -37,7 +37,7 @@ export default async function Home() {
             />
             <div className="flex items-center gap-5">
               <div className="h-px w-14 bg-brass-600 sm:w-20" />
-              <p className="font-heading text-base italic tracking-widest text-warm-200 sm:text-lg lg:text-xl">
+              <p className="font-[family-name:var(--font-great-vibes)] text-2xl text-warm-200 sm:text-3xl lg:text-4xl">
                 Shaping your Abode
               </p>
               <div className="h-px w-14 bg-brass-600 sm:w-20" />
@@ -45,18 +45,16 @@ export default async function Home() {
           </div>
 
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-brass-500">
-            Est. 2024 &nbsp;·&nbsp; Handcrafted with Pride
+            Est. 2025 &nbsp;·&nbsp; Handcrafted with Pride
           </p>
 
           <h1 className="font-heading mb-6 text-4xl font-bold leading-tight tracking-tight text-warm-50 sm:text-5xl lg:text-6xl">
-            The Art of Indian
-            <br />
-            <span className="text-brass-300">Brass Craft</span>
+            The Art of Crafings            
           </h1>
 
           <p className="mx-auto mb-10 max-w-xl text-base leading-7 text-warm-400 sm:text-lg">
             Each piece tells a story of generations. Explore our curated
-            collection of authentic handcrafted brass artifacts from the heart
+            collection of authentically crafted brass artifacts and patchworks from the different parts
             of India.
           </p>
 
@@ -181,8 +179,8 @@ export default async function Home() {
           </h2>
           <p className="text-base leading-8 text-warm-600 sm:text-lg">
             Every Aakruti piece is crafted by skilled artisans who have
-            inherited the ancient techniques of brass work, passed down through
-            generations. We bring these timeless treasures to your home.
+            inherited the ancient techniques of brass work and patch work, 
+            passed down through generations. We bring these timeless treasures to your home.
           </p>
 
           <OrnamentalDivider className="mx-auto mt-8 max-w-xs" />

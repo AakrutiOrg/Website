@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { Playfair_Display } from "next/font/google";
+import { Geist, Playfair_Display, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
 import { SiteHeader } from "@/components";
@@ -15,6 +14,13 @@ const geistSans = Geist({
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const greatVibes = Great_Vibes({
+  variable: "--font-great-vibes",
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
 });
@@ -35,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${playfair.variable} antialiased`}
+        className={`${geistSans.variable} ${playfair.variable} ${greatVibes.variable} antialiased`}
       >
         <SiteHeader />
         {children}

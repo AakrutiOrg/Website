@@ -28,6 +28,7 @@
   /* Font families */
   --font-heading: var(--font-playfair);
   --font-sans: var(--font-geist-sans);
+  --font-artistic: var(--font-great-vibes);
 }
 
 @utility bg-craft-texture {
