@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  /* Accent — lime / leaf green (logo highlight colour) */
+  --color-brass-50:  #F4FAEC;
+  --color-brass-100: #E2F3C0;
+  --color-brass-200: #C4E786;
+  --color-brass-300: #A0D44E;
+  --color-brass-400: #84BE35;
+  --color-brass-500: #6DA228;
+  --color-brass-600: #548520;
+  --color-brass-700: #3D6517;
+  --color-brass-800: #2A480F;
+  --color-brass-900: #192E09;
+
+  /* Base — fresh natural green */
+  --color-warm-50:  #F5FBF5;
+  --color-warm-100: #E8F5E8;
+  --color-warm-200: #C8E6C8;
+  --color-warm-300: #A2C8A4;
+  --color-warm-400: #7AB57C;
+  --color-warm-500: #4CAF50;
+  --color-warm-600: #388E3C;
+  --color-warm-700: #2E7D32;
+  --color-warm-800: #1E5C24;
+  --color-warm-900: #145018;
+
+  /* Font families */
+  --font-heading: var(--font-playfair);
+  --font-sans: var(--font-geist-sans);
+}
+
+@utility bg-craft-texture {
+  background-image: radial-gradient(circle, rgba(132, 190, 53, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+body {
+  background-color: #F5FBF5;
+  color: #145018;
+}
