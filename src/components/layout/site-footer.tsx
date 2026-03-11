@@ -18,7 +18,7 @@ export function SiteFooter() {
               alt={SITE_NAME}
               width={110}
               height={44}
-              className="h-11 w-auto object-contain brightness-0 invert"
+              className="h-11 w-auto object-contain"
             />
             <p className="mt-5 max-w-sm text-sm leading-7 text-warm-500">
               Authentic handcrafted artifacts, created by skilled artisans
