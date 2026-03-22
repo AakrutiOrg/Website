@@ -49,7 +49,7 @@ export default async function AdminProductsPage() {
                   <div>
                     <p className="font-medium text-warm-900">{product.name}</p>
                     <div className="mt-1 flex items-center gap-3 text-sm text-warm-500">
-                      <span>${(product.price / 100).toFixed(2)}</span>
+                      <span>{product.base_price != null ? `£${product.base_price.toFixed(2)}` : "No Base Price"}</span>
                       <span>&bull;</span>
                       <span>{product.categories?.name || "Uncategorized"}</span>
                       {!product.is_active && (

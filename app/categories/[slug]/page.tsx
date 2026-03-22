@@ -5,14 +5,14 @@ import { getCategoryBySlug } from "@/services/categories/get-category-by-slug";
 import { formatCurrency } from "@/lib/utils";
 
 type CategoryPageProps = {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ market?: string }>;
 };
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
-  const { category, products } = await getCategoryBySlug(slug);
+  const { market } = await searchParams;
+  const { category, products } = await getCategoryBySlug(slug, market);
 
   if (!category) {
     notFound();
@@ -76,15 +76,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product) => (
                 <article
-                  key={product.id}
+                  key={product.product_id}
                   className="group flex flex-col overflow-hidden border border-warm-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brass-300 hover:shadow-md"
                 >
                   {/* Product image */}
                   <div className="relative h-56 overflow-hidden bg-warm-100">
-                    {product.image_url ? (
+                    {product.primary_image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={product.image_url}
+                        src={product.primary_image_url}
                         alt={product.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
@@ -118,11 +118,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                       {product.name}
                     </h3>
                     <p className="mb-3 text-sm font-semibold text-brass-600">
-                      {formatCurrency(product.price)}
+                      {product.price !== null ? formatCurrency(product.price, product.market_currency) : 'Price TBD'}
                     </p>
-                    {product.description && (
+                    {product.short_description && (
                       <p className="flex-1 text-sm leading-6 text-warm-600">
-                        {product.description}
+                        {product.short_description}
                       </p>
                     )}
                   </div>

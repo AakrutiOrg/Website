@@ -1,16 +1,20 @@
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Category, Product } from "@/types";
+import { getCurrentMarket } from "@/lib/market/resolve-market";
+import type { Category } from "@/types";
+import type { MarketAwareProduct } from "@/types/product";
 
-type CategoryWithProducts = {
+export type CategoryWithMarketProducts = {
   category: Category | null;
-  products: Product[];
+  products: MarketAwareProduct[];
 };
 
 export async function getCategoryBySlug(
   slug: string,
-): Promise<CategoryWithProducts> {
+  marketCodeOverride?: string
+): Promise<CategoryWithMarketProducts> {
   try {
     const supabase = await createSupabaseServerClient();
+    const market = await getCurrentMarket(marketCodeOverride);
 
     const { data: category, error: categoryError } = await supabase
       .from("categories")
@@ -31,12 +35,11 @@ export async function getCategoryBySlug(
     }
 
     const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select(
-        "id, name, slug, description, image_url, price, category_id, is_active",
-      )
+      .from("product_catalog_market_view")
+      .select("*")
       .eq("category_id", category.id)
-      .eq("is_active", true)
+      .eq("market_id", market.id)
+      .eq("market_active", true)
       .order("name", { ascending: true });
 
     if (productsError) {
@@ -44,10 +47,11 @@ export async function getCategoryBySlug(
     }
 
     return {
-      category: category satisfies Category,
-      products: products satisfies Product[],
+      category: category as Category,
+      products: products as MarketAwareProduct[],
     };
-  } catch {
+  } catch (error) {
+    console.error(error);
     return {
       category: null,
       products: [],

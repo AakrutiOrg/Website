@@ -57,13 +57,16 @@ export function ImageUploader({ productId }: ImageUploaderProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="relative flex h-full w-full flex-col min-h-[150px]">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50 p-4 text-center overflow-auto">
+          <span className="text-xs text-red-700 mb-3 font-medium break-words">{error}</span>
+          <button type="button" onClick={() => setError(null)} className="text-xs font-bold text-red-800 hover:text-red-900 underline">
+             Dismiss Error
+          </button>
         </div>
       )}
-      <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-200 bg-warm-50 py-10 transition hover:bg-warm-100 opacity-60 hover:opacity-100">
+      <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-200 bg-warm-50 p-4 transition hover:bg-warm-100 opacity-60 hover:opacity-100 text-center">
         <span className="text-sm font-medium text-warm-700">
           {isUploading ? "Uploading..." : "Click to upload an image"}
         </span>

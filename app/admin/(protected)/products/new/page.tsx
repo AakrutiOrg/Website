@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { ProductForm } from "@/components/admin/product-form";
 import { getCategories } from "@/services/categories/get-categories";
+import { getMarkets } from "@/services/markets/get-markets";
 
 export default async function NewProductPage() {
-  const categories = await getCategories();
+  const [categories, markets] = await Promise.all([
+    getCategories(),
+    getMarkets()
+  ]);
 
   return (
     <div className="space-y-6">
@@ -21,7 +25,7 @@ export default async function NewProductPage() {
         </h2>
       </div>
 
-      <ProductForm categories={categories} />
+      <ProductForm categories={categories} markets={markets} />
     </div>
   );
 }

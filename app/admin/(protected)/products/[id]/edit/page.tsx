@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/components/admin/product-form";
 import { ProductImageGallery } from "@/components/admin/product-image-gallery";
 import { getCategories } from "@/services/categories/get-categories";
+import { getMarkets } from "@/services/markets/get-markets";
 
 type EditProductPageProps = {
   params: Promise<{
@@ -15,10 +16,12 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const { id } = await params;
   const supabase = await createClient();
 
-  const [categories, { data: product }, { data: images }] = await Promise.all([
+  const [categories, markets, { data: product }, { data: images }, { data: marketData }] = await Promise.all([
     getCategories(),
+    getMarkets(),
     supabase.from("products").select("*").eq("id", id).single(),
     supabase.from("product_images").select("*").eq("product_id", id).order("created_at", { ascending: true }),
+    supabase.from("product_market_data").select("*").eq("product_id", id)
   ]);
 
   if (!product) {
@@ -45,7 +48,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         <div className="lg:col-span-2 space-y-6">
           <section className="bg-white p-6 rounded-2xl border border-warm-200 shadow-sm space-y-4">
              <h3 className="font-semibold text-warm-900 font-heading">Product Details</h3>
-             <ProductForm product={product} categories={categories} />
+             <ProductForm product={product} categories={categories} markets={markets} marketData={marketData || []} />
           </section>
         </div>
         
