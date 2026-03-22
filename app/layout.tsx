@@ -1,29 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Playfair_Display, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
 import { SiteHeader } from "@/components";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const greatVibes = Great_Vibes({
-  variable: "--font-great-vibes",
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -46,7 +26,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${playfair.variable} ${greatVibes.variable} antialiased`}
+        className="antialiased"
+        style={
+          {
+            "--font-geist-sans": '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+            "--font-playfair": '"Georgia", "Times New Roman", serif',
+            "--font-great-vibes": '"Brush Script MT", "Lucida Handwriting", cursive',
+          } as React.CSSProperties
+        }
       >
         <SiteHeader />
         {children}
