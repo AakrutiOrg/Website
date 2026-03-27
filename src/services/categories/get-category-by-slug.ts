@@ -48,7 +48,12 @@ export async function getCategoryBySlug(
 
     return {
       category: category as Category,
-      products: products as MarketAwareProduct[],
+      products: (products as MarketAwareProduct[]).map((p) => ({
+        ...p,
+        primary_image_url: p.primary_image_url
+          ? supabase.storage.from("product-images").getPublicUrl(p.primary_image_url).data.publicUrl
+          : null,
+      })),
     };
   } catch (error) {
     console.error(error);

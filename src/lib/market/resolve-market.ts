@@ -3,7 +3,7 @@ import { getMarkets } from "@/services/markets/get-markets";
 import type { Market } from "@/types/market";
 
 export const MARKET_COOKIE_NAME = "aakruti_market";
-export const DEFAULT_MARKET_CODE = "GB";
+export const DEFAULT_MARKET_CODE = "UK";
 
 /**
  * Resolves the active market globally.

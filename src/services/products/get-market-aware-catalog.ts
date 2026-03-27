@@ -16,7 +16,12 @@ export async function getMarketAwareProducts(marketCodeOverride?: string): Promi
     return [];
   }
 
-  return data as MarketAwareProduct[];
+  return (data as MarketAwareProduct[]).map((p) => ({
+    ...p,
+    primary_image_url: p.primary_image_url
+      ? supabase.storage.from("product-images").getPublicUrl(p.primary_image_url).data.publicUrl
+      : null,
+  }));
 }
 
 export async function getMarketAwareProductBySlug(slug: string, marketCodeOverride?: string): Promise<MarketAwareProduct | null> {
@@ -35,5 +40,11 @@ export async function getMarketAwareProductBySlug(slug: string, marketCodeOverri
     return null;
   }
 
-  return data as MarketAwareProduct;
+  const product = data as MarketAwareProduct;
+  return {
+    ...product,
+    primary_image_url: product.primary_image_url
+      ? supabase.storage.from("product-images").getPublicUrl(product.primary_image_url).data.publicUrl
+      : null,
+  };
 }

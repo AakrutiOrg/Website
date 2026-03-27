@@ -8,10 +8,20 @@ export async function addProductImage(productId: string, storagePath: string) {
   await requireAdmin();
   const supabase = await createClient();
 
+  // If no primary image exists yet, make this one primary
+  const { data: existing } = await supabase
+    .from("product_images")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const isPrimary = !existing;
+
   const { error } = await supabase.from("product_images").insert({
     product_id: productId,
     storage_path: storagePath,
-    is_primary: false,
+    is_primary: isPrimary,
   });
 
   if (error) {
@@ -19,6 +29,8 @@ export async function addProductImage(productId: string, storagePath: string) {
   }
 
   revalidatePath(`/admin/products/${productId}/edit`);
+  revalidatePath("/");
+  revalidatePath("/categories", "layout");
 }
 
 export async function deleteProductImage(imageId: string, storagePath: string, productId: string) {
@@ -42,7 +54,7 @@ export async function deleteProductImage(imageId: string, storagePath: string, p
   revalidatePath(`/admin/products/${productId}/edit`);
 }
 
-export async function setPrimaryImage(productId: string, imageId: string, storagePath: string) {
+export async function setPrimaryImage(productId: string, imageId: string) {
   await requireAdmin();
   const supabase = await createClient();
 
@@ -62,18 +74,8 @@ export async function setPrimaryImage(productId: string, imageId: string, storag
     throw new Error(`Failed to set primary image: ${primaryError.message}`);
   }
 
-  // 3. Sync to products table for backward compatibility
-  const publicUrl = supabase.storage.from("product-images").getPublicUrl(storagePath).data.publicUrl;
-
-  const { error: productError } = await supabase
-    .from("products")
-    .update({ image_url: publicUrl })
-    .eq("id", productId);
-
-  if (productError) {
-    throw new Error(`Failed to sync primary image to product: ${productError.message}`);
-  }
-
   revalidatePath(`/admin/products/${productId}/edit`);
   revalidatePath("/admin/products");
+  revalidatePath("/");
+  revalidatePath("/categories", "layout");
 }
