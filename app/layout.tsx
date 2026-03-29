@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: {
@@ -35,9 +36,11 @@ export default function RootLayout({
           } as React.CSSProperties
         }
       >
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <Providers>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );

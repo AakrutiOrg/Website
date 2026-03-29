@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { formatCurrency } from "@/lib/utils";
 import { getMarketAwareProductDetail } from "@/services/products/get-market-aware-product-detail";
+import { AddToCartControls } from "./_components/add-to-cart-controls";
 import { ProductImageViewer } from "./_components/product-image-viewer";
 
 type ProductPageProps = {
@@ -142,6 +143,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                   <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
+
+              <AddToCartControls
+                product={{
+                  id: product.product_id,
+                  name: product.name,
+                  slug: product.slug,
+                  categorySlug: product.category_slug,
+                  imageUrl: product.primary_image_url,
+                  price: product.price,
+                  currency: product.market_currency,
+                  stockQuantity: product.stock_quantity,
+                }}
+              />
             </div>
           </div>
         </div>

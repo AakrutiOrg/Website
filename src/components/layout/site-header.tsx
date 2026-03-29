@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+import { useCart } from "@/components/providers/cart-provider";
+
 const NAV_LINKS = [
   { label: "Collections", href: "/" },
   { label: "About", href: "#" },
@@ -74,6 +76,7 @@ function CloseIcon() {
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { totalItems } = useCart();
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -112,12 +115,18 @@ export function SiteHeader() {
 
           {/* Right — cart + mobile toggle */}
           <div className="flex items-center gap-4">
-            <button
+            <Link
+              href="/cart"
               aria-label="View cart"
-              className="hidden text-warm-600 transition-colors hover:text-brass-600 md:block"
+              className="relative hidden text-warm-600 transition-colors hover:text-brass-600 md:block"
             >
               <BagIcon />
-            </button>
+              {totalItems > 0 && (
+                <span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-brass-500 px-1 text-[10px] font-bold text-warm-900">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
 
             <button
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -145,13 +154,15 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="h-px bg-warm-200" />
-            <button
+            <Link
+              href="/cart"
               aria-label="View cart"
+              onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2 text-sm font-medium text-warm-600 transition-colors hover:text-brass-600"
             >
               <BagIcon />
-              <span>Cart</span>
-            </button>
+              <span>Cart {totalItems > 0 ? `(${totalItems})` : ""}</span>
+            </Link>
           </nav>
         </div>
       )}

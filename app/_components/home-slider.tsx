@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useCart } from "@/components/providers/cart-provider";
 import { formatCurrency } from "@/lib/utils";
 import type { Category } from "@/types/category";
 import type { MarketAwareProduct } from "@/types/product";
@@ -28,6 +30,14 @@ interface HomeSliderProps {
 export function HomeSlider({ categories, treasures }: HomeSliderProps) {
   const [page, setPage] = useState<"hero" | "collections">("hero");
   const [treasureIndex, setTreasureIndex] = useState(0);
+  const [cartMessage, setCartMessage] = useState("");
+  const searchParams = useSearchParams();
+  const { addItem } = useCart();
+
+  useEffect(() => {
+    const requestedView = searchParams.get("view");
+    setPage(requestedView === "collections" ? "collections" : "hero");
+  }, [searchParams]);
 
   useEffect(() => {
     if (treasures.length <= 1) {
@@ -55,6 +65,27 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
 
   const showNextTreasure = () => {
     setTreasureIndex((current) => (current + 1) % treasures.length);
+  };
+
+  const handleAddTreasureToCart = () => {
+    if (!activeTreasure || activeTreasure.stock_quantity <= 0) {
+      return;
+    }
+
+    addItem({
+      id: activeTreasure.product_id,
+      name: activeTreasure.name,
+      slug: activeTreasure.slug,
+      categorySlug: activeTreasure.category_slug,
+      imageUrl: activeTreasure.primary_image_url,
+      price: activeTreasure.price,
+      currency: activeTreasure.market_currency,
+      quantity: 1,
+      stockQuantity: activeTreasure.stock_quantity,
+    });
+
+    setCartMessage("1 item added to cart");
+    window.setTimeout(() => setCartMessage(""), 2200);
   };
 
   return (
@@ -189,6 +220,15 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       View Product
                       <span aria-hidden="true">&rarr;</span>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={handleAddTreasureToCart}
+                      disabled={activeTreasure.stock_quantity <= 0}
+                      className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600 disabled:cursor-not-allowed disabled:border-warm-200 disabled:bg-warm-100 disabled:text-warm-400"
+                    >
+                      {activeTreasure.stock_quantity > 0 ? "Add to Cart" : "Out of Stock"}
+                      <span aria-hidden="true">&rarr;</span>
+                    </button>
                     <Link
                       href={`/categories/${activeTreasure.category_slug}`}
                       className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600"
@@ -197,6 +237,9 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       <span aria-hidden="true">&rarr;</span>
                     </Link>
                   </div>
+                  {cartMessage && (
+                    <p className="mt-4 text-sm font-medium text-brass-600">{cartMessage}</p>
+                  )}
 
                   {treasures.length > 1 && (
                     <div className="mt-8 flex items-center gap-3">
