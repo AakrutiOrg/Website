@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { formatCurrency } from "@/lib/utils";
 import type { Category } from "@/types/category";
 import type { MarketAwareProduct } from "@/types/product";
 
@@ -21,135 +22,204 @@ function OrnamentalDivider({ className = "" }: { className?: string }) {
 
 interface HomeSliderProps {
   categories: Category[];
-  trendingProduct: MarketAwareProduct | null;
+  treasures: MarketAwareProduct[];
 }
 
-export function HomeSlider({ categories, trendingProduct }: HomeSliderProps) {
+export function HomeSlider({ categories, treasures }: HomeSliderProps) {
   const [page, setPage] = useState<"hero" | "collections">("hero");
+  const [treasureIndex, setTreasureIndex] = useState(0);
+
+  useEffect(() => {
+    if (treasures.length <= 1) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setTreasureIndex((current) => (current + 1) % treasures.length);
+    }, 4500);
+
+    return () => window.clearInterval(interval);
+  }, [treasures]);
+
+  useEffect(() => {
+    if (treasureIndex >= treasures.length) {
+      setTreasureIndex(0);
+    }
+  }, [treasureIndex, treasures.length]);
+
+  const activeTreasure = treasures[treasureIndex] ?? null;
+
+  const showPreviousTreasure = () => {
+    setTreasureIndex((current) => (current - 1 + treasures.length) % treasures.length);
+  };
+
+  const showNextTreasure = () => {
+    setTreasureIndex((current) => (current + 1) % treasures.length);
+  };
 
   return (
     <div className="relative overflow-hidden">
-      {/* Two-panel flex strip — slides left/right */}
       <div
-        className="flex transition-transform duration-700 ease-in-out will-change-transform"
+        className="flex items-start transition-transform duration-700 ease-in-out will-change-transform"
         style={{ transform: page === "hero" ? "translateX(0)" : "translateX(-100%)" }}
       >
-        {/* ── Panel 1: Hero + Trending Banner ── */}
-        <div className="min-w-full">
-          {/* Hero */}
-          <section className="relative overflow-hidden bg-warm-900">
-            <div className="bg-craft-texture absolute inset-0 opacity-60" />
+        <div className="min-w-full bg-warm-900">
+          <section className="relative overflow-hidden bg-warm-900 py-12 sm:py-14 lg:py-16">
+            <div className="bg-craft-texture absolute inset-0 opacity-20" />
+            <div className="absolute inset-0 bg-gradient-to-b from-warm-900 via-warm-900/96 to-warm-800" />
 
-            <div className="relative mx-auto max-w-6xl px-6 pt-6 pb-24 text-center sm:px-10 sm:pt-8 sm:pb-32 lg:px-12 lg:pt-10 lg:pb-40">
-              {/* Hero Logo + Punchline */}
-              <div className="mb-10 flex flex-col items-center gap-5">
+            <div className="absolute left-6 top-6 h-8 w-8 border-l-2 border-t-2 border-brass-400/60 sm:left-10 sm:top-10" />
+            <div className="absolute right-6 top-6 h-8 w-8 border-r-2 border-t-2 border-brass-400/60 sm:right-10 sm:top-10" />
+            <div className="absolute bottom-6 left-6 h-8 w-8 border-b-2 border-l-2 border-brass-400/60 sm:bottom-10 sm:left-10" />
+            <div className="absolute bottom-6 right-6 h-8 w-8 border-b-2 border-r-2 border-brass-400/60 sm:bottom-10 sm:right-10" />
+
+            <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-center px-6 text-center sm:px-10 lg:px-12">
+              <div className="mb-4 flex flex-col items-center gap-3">
                 <Image
                   src="/logo.png"
                   alt="Aakruti"
                   width={180}
                   height={180}
-                  className="h-32 w-auto drop-shadow-2xl sm:h-36 lg:h-40"
+                  className="h-20 w-auto drop-shadow-2xl sm:h-24 lg:h-28"
                   priority
                 />
                 <div className="flex items-center gap-5">
-                  <div className="h-px w-14 bg-brass-600 sm:w-20" />
+                  <div className="h-px w-14 bg-brass-500 sm:w-20" />
                   <p className="font-[family-name:var(--font-great-vibes)] text-2xl text-warm-200 sm:text-3xl lg:text-4xl">
                     Shaping your Abode
                   </p>
-                  <div className="h-px w-14 bg-brass-600 sm:w-20" />
+                  <div className="h-px w-14 bg-brass-500 sm:w-20" />
                 </div>
               </div>
 
-              <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-brass-500">
-                Est. 2025 &nbsp;·&nbsp; Handcrafted with Pride
+              <p className="mb-2 text-xs font-medium uppercase tracking-[0.35em] text-brass-400">
+                Est. 2025 · Handcrafted with Pride
               </p>
 
-              <h1 className="font-heading mb-6 text-4xl font-bold leading-tight tracking-tight text-warm-50 sm:text-5xl lg:text-6xl">
+              <h1 className="font-heading mb-3 text-4xl font-bold leading-tight tracking-tight text-warm-50 sm:text-5xl lg:text-6xl">
                 The Art of Craftings
               </h1>
 
-              <p className="mx-auto mb-10 max-w-xl text-base leading-7 text-warm-400 sm:text-lg">
+              <p className="mx-auto mb-6 max-w-xl text-base leading-7 text-warm-300 sm:text-lg">
                 Each piece tells a story of generations. Explore our curated
-                collection of authentically crafted brass artifacts and patchworks from the different parts
-                of India.
+                collection of authentically crafted brass artifacts and patchworks from the
+                different parts of India.
               </p>
 
               <button
                 onClick={() => setPage("collections")}
-                className="inline-flex items-center gap-2 border border-brass-500 px-8 py-3 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 transition-all duration-200 hover:bg-brass-500 hover:text-warm-900"
+                className="cursor-pointer inline-flex items-center gap-2 border border-brass-400 px-8 py-3 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 backdrop-blur-sm transition-all duration-200 hover:border-brass-500 hover:bg-brass-500 hover:text-warm-900"
               >
-                Explore Collections
-                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+                Explore all Treasures
+                <span aria-hidden="true">→</span>
               </button>
-
-              {/* Bottom ornament */}
-              <div className="mt-14 flex items-center justify-center gap-4">
-                <div className="h-px w-12 bg-brass-800" />
-                <span className="text-brass-700" aria-hidden="true">
-                  ◆
-                </span>
-                <div className="h-px w-12 bg-brass-800" />
-              </div>
             </div>
           </section>
 
-          {/* Trending Article Banner */}
-          {trendingProduct && (
-            <section className="bg-warm-900">
-              <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
-                <Link
-                  href={`/categories/${trendingProduct.category_slug}/${trendingProduct.slug}`}
-                  className="group relative block overflow-hidden"
-                >
-                  <div className="relative h-64 w-full overflow-hidden sm:h-80 lg:h-96">
-                    {trendingProduct.primary_image_url ? (
+          {activeTreasure && (
+            <section className="bg-warm-50 py-14 sm:py-18">
+              <div className="mx-auto grid max-w-6xl gap-8 px-6 sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12">
+                <div className="relative overflow-hidden border border-warm-200 bg-white shadow-sm">
+                  <div className="relative h-[320px] bg-warm-100 sm:h-[420px]">
+                    {activeTreasure.primary_image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={trendingProduct.primary_image_url}
-                        alt={trendingProduct.name}
-                        className="h-full w-full object-cover brightness-75 transition-transform duration-700 group-hover:scale-105"
+                        src={activeTreasure.primary_image_url}
+                        alt={activeTreasure.name}
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-warm-800">
-                        <span className="text-4xl text-brass-600" aria-hidden="true">◆</span>
+                      <div className="bg-craft-texture h-full w-full" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-warm-900/35 via-transparent to-transparent" />
+                    <div className="absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-brass-400" />
+                    <div className="absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-brass-400" />
+                    <div className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-brass-400" />
+                    <div className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-brass-400" />
+                  </div>
+                </div>
+
+                <div className="max-w-xl">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.35em] text-brass-600">
+                      Our Precious Treasures
+                    </p>
+                    {treasures.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={showPreviousTreasure}
+                          className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
+                          aria-label="Previous treasure"
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          onClick={showNextTreasure}
+                          className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
+                          aria-label="Next treasure"
+                        >
+                          →
+                        </button>
                       </div>
                     )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-warm-900/80 via-warm-900/20 to-transparent" />
-
-                    <div className="absolute left-4 top-4 h-6 w-6 border-l-2 border-t-2 border-brass-400" />
-                    <div className="absolute right-4 top-4 h-6 w-6 border-r-2 border-t-2 border-brass-400" />
-                    <div className="absolute bottom-4 left-4 h-6 w-6 border-b-2 border-l-2 border-brass-400" />
-                    <div className="absolute bottom-4 right-4 h-6 w-6 border-b-2 border-r-2 border-brass-400" />
-
-                    <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                      <p className="mb-1 text-xs font-medium uppercase tracking-[0.3em] text-brass-400">
-                        Trending Now
-                      </p>
-                      <h3 className="font-heading mb-2 text-2xl font-bold text-warm-50 sm:text-3xl">
-                        {trendingProduct.name}
-                      </h3>
-                      {trendingProduct.short_description && (
-                        <p className="mb-3 max-w-xl text-sm text-warm-300 line-clamp-2">
-                          {trendingProduct.short_description}
-                        </p>
-                      )}
-                      <span className="inline-flex items-center gap-2 text-sm font-medium text-brass-300 transition-colors group-hover:text-brass-200">
-                        View Article
-                        <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
-                      </span>
-                    </div>
                   </div>
-                </Link>
+
+                  <h2 className="font-heading mt-3 text-3xl font-bold text-warm-900 sm:text-4xl">
+                    {activeTreasure.name}
+                  </h2>
+                  <p className="mt-3 text-sm uppercase tracking-[0.2em] text-warm-500">
+                    {activeTreasure.category_name}
+                  </p>
+                  {activeTreasure.price !== null && (
+                    <p className="mt-5 text-lg font-semibold text-brass-600">
+                      {formatCurrency(activeTreasure.price, activeTreasure.market_currency)}
+                    </p>
+                  )}
+                  <p className="mt-5 text-base leading-8 text-warm-600 sm:text-lg">
+                    {activeTreasure.short_description ||
+                      "A featured handcrafted piece from our latest curation, chosen for its artistry and timeless character."}
+                  </p>
+                  <div className="mt-8 flex flex-wrap gap-4">
+                    <Link
+                      href={`/categories/${activeTreasure.category_slug}/${activeTreasure.slug}`}
+                      className="inline-flex items-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
+                    >
+                      View Product
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                    <Link
+                      href={`/categories/${activeTreasure.category_slug}`}
+                      className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600"
+                    >
+                      Explore Category
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </div>
+
+                  {treasures.length > 1 && (
+                    <div className="mt-8 flex items-center gap-3">
+                      {treasures.map((treasure, index) => (
+                        <button
+                          key={treasure.product_id}
+                          type="button"
+                          onClick={() => setTreasureIndex(index)}
+                          className={`cursor-pointer h-2.5 transition-all ${index === treasureIndex ? "w-10 bg-brass-500" : "w-2.5 bg-warm-300 hover:bg-brass-300"
+                            }`}
+                          aria-label={`Show treasure ${index + 1}: ${treasure.name}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
           )}
         </div>
 
-        {/* ── Panel 2: Collections ── */}
         <div className="min-w-full bg-warm-50 py-20 sm:py-24">
           <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
-            {/* Section heading */}
             <div className="mb-14 text-center">
               <button
                 onClick={() => setPage("hero")}
@@ -175,7 +245,6 @@ export function HomeSlider({ categories, trendingProduct }: HomeSliderProps) {
                     href={`/categories/${category.slug}`}
                     className="group flex flex-col overflow-hidden border border-warm-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brass-300 hover:shadow-md"
                   >
-                    {/* Image / placeholder */}
                     <div className="relative h-48 overflow-hidden bg-warm-100">
                       {category.image_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -201,14 +270,12 @@ export function HomeSlider({ categories, trendingProduct }: HomeSliderProps) {
                         </div>
                       )}
 
-                      {/* Brass corner accents */}
                       <div className="absolute left-0 top-0 h-5 w-5 border-l-2 border-t-2 border-brass-400" />
                       <div className="absolute right-0 top-0 h-5 w-5 border-r-2 border-t-2 border-brass-400" />
                       <div className="absolute bottom-0 left-0 h-5 w-5 border-b-2 border-l-2 border-brass-400" />
                       <div className="absolute bottom-0 right-0 h-5 w-5 border-b-2 border-r-2 border-brass-400" />
                     </div>
 
-                    {/* Card body */}
                     <div className="flex flex-1 flex-col p-5">
                       <h2 className="font-heading mb-2 text-xl font-semibold text-warm-900">
                         {category.name}
@@ -218,10 +285,7 @@ export function HomeSlider({ categories, trendingProduct }: HomeSliderProps) {
                       </p>
                       <div className="flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors group-hover:text-brass-500">
                         <span>Explore Collection</span>
-                        <span
-                          className="transition-transform group-hover:translate-x-1"
-                          aria-hidden="true"
-                        >
+                        <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
                           →
                         </span>
                       </div>

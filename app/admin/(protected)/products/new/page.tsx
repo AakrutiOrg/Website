@@ -1,12 +1,17 @@
-import Link from "next/link";
+﻿import Link from "next/link";
+
 import { ProductForm } from "@/components/admin/product-form";
+import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/services/categories/get-categories";
 import { getMarkets } from "@/services/markets/get-markets";
 
 export default async function NewProductPage() {
-  const [categories, markets] = await Promise.all([
+  const supabase = await createClient();
+
+  const [categories, markets, { count: preciousCount }] = await Promise.all([
     getCategories(),
-    getMarkets()
+    getMarkets(),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_featured", true),
   ]);
 
   return (
@@ -25,7 +30,8 @@ export default async function NewProductPage() {
         </h2>
       </div>
 
-      <ProductForm categories={categories} markets={markets} />
+      <ProductForm categories={categories} markets={markets} preciousCount={preciousCount ?? 0} />
     </div>
   );
 }
+

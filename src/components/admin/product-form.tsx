@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef } from "react";
 
@@ -12,9 +12,16 @@ type ProductFormProps = {
   categories: Category[];
   markets: Market[];
   marketData?: ProductMarketData[];
+  preciousCount?: number;
 };
 
-export function ProductForm({ product, categories, markets, marketData = [] }: ProductFormProps) {
+export function ProductForm({
+  product,
+  categories,
+  markets,
+  marketData = [],
+  preciousCount = 0,
+}: ProductFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<{ file: File, url: string }[]>([]);
@@ -27,23 +34,22 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // Check max limit (5)
     if (previewImages.length + files.length > 5) {
       setError("You can only upload a maximum of 5 images at once.");
       return;
     }
 
-    const newPreviews = files.map(file => ({
+    const newPreviews = files.map((file) => ({
       file,
-      url: URL.createObjectURL(file)
+      url: URL.createObjectURL(file),
     }));
 
-    setPreviewImages(prev => [...prev, ...newPreviews]);
+    setPreviewImages((prev) => [...prev, ...newPreviews]);
     setError(null);
   }
 
   function removePreview(index: number) {
-    setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function action(formData: FormData) {
@@ -51,12 +57,11 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
     setError(null);
 
     try {
-      let uploadedPaths: string[] = [];
+      const uploadedPaths: string[] = [];
 
-      // Upload images natively from browser to bypass NextJS limits
       if (previewImages.length > 0) {
         for (const { file } of previewImages) {
-          const fileExt = file.name.split('.').pop();
+          const fileExt = file.name.split(".").pop();
           const fileName = `${targetProductId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
@@ -88,7 +93,7 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
   }
 
   function getMarketData(marketId: string) {
-    return marketData.find(m => m.market_id === marketId);
+    return marketData.find((m) => m.market_id === marketId);
   }
 
   return (
@@ -98,7 +103,7 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
           <div className="relative h-24 w-24 animate-pulse">
             <img src="/logo.png" alt="Aakruti Logo" className="h-full w-full object-contain drop-shadow-xl" />
           </div>
-          <p className="mt-6 font-heading text-lg font-medium text-warm-900 animate-pulse">
+          <p className="mt-6 animate-pulse font-heading text-lg font-medium text-warm-900">
             Processing Product Details...
           </p>
         </div>
@@ -114,11 +119,9 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
           </div>
         )}
 
-        {/* Global Product Configuration */}
         <div className="space-y-6">
-          <h3 className="font-semibold text-warm-900 font-heading border-b border-warm-100 pb-2">Global Settings</h3>
+          <h3 className="font-heading font-semibold text-warm-900 border-b border-warm-100 pb-2">Global Settings</h3>
           <div className="grid gap-6 sm:grid-cols-2">
-            {/* Name */}
             <label className="block space-y-2">
               <span className="text-sm font-medium text-warm-800">Product Name</span>
               <input
@@ -130,7 +133,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
               />
             </label>
 
-            {/* Slug */}
             <label className="block space-y-2">
               <span className="text-sm font-medium text-warm-800">Slug (URL friendly)</span>
               <input
@@ -144,7 +146,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
               />
             </label>
 
-            {/* Base Price (Legacy) */}
             <label className="block space-y-2">
               <span className="text-sm font-medium text-warm-800">Base Price (Legacy Fallback)</span>
               <input
@@ -157,7 +158,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
               />
             </label>
 
-            {/* Category */}
             <label className="block space-y-2">
               <span className="text-sm font-medium text-warm-800">Category</span>
               <select
@@ -201,7 +201,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
             </label>
           </div>
 
-          {/* Short Description */}
           <label className="block space-y-2">
             <span className="text-sm font-medium text-warm-800">Short Description</span>
             <textarea
@@ -212,7 +211,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
             />
           </label>
 
-          {/* Description */}
           <label className="block space-y-2">
             <span className="text-sm font-medium text-warm-800">Full Description</span>
             <textarea
@@ -223,7 +221,6 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
             />
           </label>
 
-          {/* Global Active */}
           <label className="flex items-center gap-3 pt-2">
             <input
               type="checkbox"
@@ -233,21 +230,36 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
             />
             <span className="text-sm font-medium text-warm-800">Product is active globally</span>
           </label>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              name="is_featured"
+              defaultChecked={product ? product.is_featured : false}
+              className="mt-0.5 h-5 w-5 rounded border-warm-300 text-brass-600 focus:ring-brass-500"
+            />
+            <span className="space-y-1">
+              <span className="block text-sm font-medium text-warm-800">Include in Precious Treasures</span>
+              <span className="block text-xs text-warm-500">
+                Curates this product into the homepage treasure slideshow. Maximum 5 products.
+                Currently selected: {preciousCount}/5.
+              </span>
+            </span>
+          </label>
         </div>
 
-        {/* Market Specific Configuration */}
-        <div className="space-y-6 pt-6 border-t border-warm-200">
-          <h3 className="font-semibold text-warm-900 font-heading">Market Availability & Pricing</h3>
-          <p className="text-sm text-warm-500 mb-6">Configure the product for each specific operating region.</p>
+        <div className="space-y-6 border-t border-warm-200 pt-6">
+          <h3 className="font-heading font-semibold text-warm-900">Market Availability & Pricing</h3>
+          <p className="mb-6 text-sm text-warm-500">Configure the product for each specific operating region.</p>
 
           {markets.map((market) => {
             const data = getMarketData(market.id);
 
             return (
-              <div key={market.id} className="rounded-xl border border-warm-200 bg-warm-50 p-5 space-y-5">
+              <div key={market.id} className="space-y-5 rounded-xl border border-warm-200 bg-warm-50 p-5">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-warm-900 flex items-center gap-2">
-                    <span className="text-xl leading-none">{market.code === 'IN' ? '🇮🇳' : market.code === 'UK' ? '🇬🇧' : '🌍'}</span>
+                  <h4 className="flex items-center gap-2 font-medium text-warm-900">
+                    <span className="text-xl leading-none">{market.code === "IN" ? "IN" : market.code === "UK" ? "UK" : "GL"}</span>
                     {market.name} Market
                   </h4>
                   <label className="flex items-center gap-2">
@@ -309,10 +321,9 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
           })}
         </div>
 
-        {/* Image Upload Configuration */}
-        <div className="space-y-6 pt-6 border-t border-warm-200">
-          <h3 className="font-semibold text-warm-900 font-heading">Product Details & Imagery</h3>
-          <p className="text-sm text-warm-500 mb-6">Upload up to 5 images for this product.</p>
+        <div className="space-y-6 border-t border-warm-200 pt-6">
+          <h3 className="font-heading font-semibold text-warm-900">Product Details & Imagery</h3>
+          <p className="mb-6 text-sm text-warm-500">Upload up to 5 images for this product.</p>
 
           <div className="space-y-4">
             <label className="block">
@@ -321,24 +332,19 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
                 multiple
                 accept="image/*"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-warm-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-xl file:border-0
-                file:text-sm file:font-semibold
-                file:bg-warm-100 file:text-warm-700
-                hover:file:bg-warm-200 transition"
+                className="block w-full text-sm text-warm-500 file:mr-4 file:rounded-xl file:border-0 file:bg-warm-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-warm-700 transition hover:file:bg-warm-200"
               />
             </label>
 
             {previewImages.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-4">
+              <div className="mt-4 flex flex-wrap gap-4">
                 {previewImages.map((img, idx) => (
-                  <div key={idx} className="relative group rounded-xl overflow-hidden border border-warm-200 w-24 h-24">
-                    <img src={img.url} alt="upload preview" className="w-full h-full object-cover" />
+                  <div key={idx} className="group relative h-24 w-24 overflow-hidden rounded-xl border border-warm-200">
+                    <img src={img.url} alt="upload preview" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removePreview(idx)}
-                      className="cursor-pointer absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <span className="text-xl">&times;</span>
                     </button>
@@ -349,7 +355,7 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
           </div>
         </div>
 
-        <div className="pt-4 border-t border-warm-100">
+        <div className="border-t border-warm-100 pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
@@ -362,3 +368,4 @@ export function ProductForm({ product, categories, markets, marketData = [] }: P
     </>
   );
 }
+

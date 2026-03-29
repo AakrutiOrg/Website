@@ -53,6 +53,31 @@ async function upsertMarketData(productId: string, formData: FormData) {
   }
 }
 
+async function ensureFeaturedLimit(supabase: Awaited<ReturnType<typeof createClient>>, isFeatured: boolean, currentProductId?: string) {
+  if (!isFeatured) {
+    return;
+  }
+
+  let query = supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_featured", true);
+
+  if (currentProductId) {
+    query = query.neq("id", currentProductId);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to validate precious products limit: ${error.message}`);
+  }
+
+  if ((count ?? 0) >= 5) {
+    throw new Error("You can only mark up to 5 products as Precious Treasures.");
+  }
+}
+
 export async function createProduct(formData: FormData) {
   await requireAdmin();
 
@@ -68,8 +93,11 @@ export async function createProduct(formData: FormData) {
   const sku = formData.get("sku") as string;
   const art_type = formData.get("art_type") as string;
   const is_active = formData.get("is_active") === "on";
+  const is_featured = formData.get("is_featured") === "on";
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
+
+  await ensureFeaturedLimit(supabase, is_featured);
 
   const { data: product, error } = await supabase.from("products").insert({
     id,
@@ -82,6 +110,7 @@ export async function createProduct(formData: FormData) {
     art_type,
     category_id,
     is_active,
+    is_featured,
   }).select("id").single();
 
   if (error || !product) {
@@ -132,8 +161,11 @@ export async function updateProduct(id: string, formData: FormData) {
   const sku = formData.get("sku") as string;
   const art_type = formData.get("art_type") as string;
   const is_active = formData.get("is_active") === "on";
+  const is_featured = formData.get("is_featured") === "on";
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
+
+  await ensureFeaturedLimit(supabase, is_featured, id);
 
   const { error } = await supabase
     .from("products")
@@ -147,6 +179,7 @@ export async function updateProduct(id: string, formData: FormData) {
       art_type,
       category_id,
       is_active,
+      is_featured,
     })
     .eq("id", id);
 

@@ -108,8 +108,9 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
             {products.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {products.map((product) => (
-                  <article
+                  <Link
                     key={product.product_id}
+                    href={`/categories/${product.category_slug}/${product.slug}`}
                     className="group flex flex-col overflow-hidden border border-warm-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brass-300 hover:shadow-md"
                   >
                     {/* Product image */}
@@ -160,8 +161,12 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                           {product.short_description}
                         </p>
                       )}
+                      <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors group-hover:text-brass-500">
+                        <span>View Product</span>
+                        <span aria-hidden="true">→</span>
+                      </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             ) : (

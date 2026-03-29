@@ -1,24 +1,32 @@
-import Link from "next/link";
+﻿import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminProductsPage() {
   const supabase = await createClient();
 
-  // Fetch products with their categories
-  const { data: products } = await supabase
-    .from("products")
-    .select(`
-      *,
-      categories:category_id (name)
-    `)
-    .order("created_at", { ascending: false });
+  const [{ data: products }, { count: preciousCount }] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        *,
+        categories:category_id (name)
+      `)
+      .order("created_at", { ascending: false }),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_featured", true),
+  ]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-heading text-2xl font-semibold text-warm-900">
-          Products
-        </h2>
+        <div>
+          <h2 className="font-heading text-2xl font-semibold text-warm-900">
+            Products
+          </h2>
+          <p className="mt-1 text-sm text-warm-500">
+            Precious Treasures selected: {preciousCount ?? 0}/5
+          </p>
+        </div>
         <Link
           href="/admin/products/new"
           className="rounded-xl bg-brass-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brass-700"
@@ -41,13 +49,20 @@ export default async function AdminProductsPage() {
                     <img
                       src={product.image_url}
                       alt={product.name}
-                      className="h-12 w-12 rounded-lg object-cover bg-warm-100"
+                      className="h-12 w-12 rounded-lg bg-warm-100 object-cover"
                     />
                   ) : (
                     <div className="h-12 w-12 rounded-lg bg-warm-100" />
                   )}
                   <div>
-                    <p className="font-medium text-warm-900">{product.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-warm-900">{product.name}</p>
+                      {product.is_featured && (
+                        <span className="rounded-full bg-brass-100 px-2.5 py-1 text-xs font-medium text-brass-700">
+                          Precious
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1 flex items-center gap-3 text-sm text-warm-500">
                       <span>{product.base_price != null ? `£${product.base_price.toFixed(2)}` : "No Base Price"}</span>
                       <span>&bull;</span>
@@ -55,7 +70,7 @@ export default async function AdminProductsPage() {
                       {!product.is_active && (
                         <>
                           <span>&bull;</span>
-                          <span className="text-red-600 font-medium">Inactive</span>
+                          <span className="font-medium text-red-600">Inactive</span>
                         </>
                       )}
                     </div>
@@ -75,3 +90,4 @@ export default async function AdminProductsPage() {
     </div>
   );
 }
+
