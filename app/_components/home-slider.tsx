@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +13,7 @@ function OrnamentalDivider({ className = "" }: { className?: string }) {
     <div className={`flex items-center gap-4 ${className}`}>
       <div className="h-px flex-1 bg-brass-300" />
       <span className="text-brass-400" aria-hidden="true">
-        ◆
+        &#10022;
       </span>
       <div className="h-px flex-1 bg-brass-300" />
     </div>
@@ -111,7 +111,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                 className="cursor-pointer inline-flex items-center gap-2 border border-brass-400 px-8 py-3 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 backdrop-blur-sm transition-all duration-200 hover:border-brass-500 hover:bg-brass-500 hover:text-warm-900"
               >
                 Explore all Treasures
-                <span aria-hidden="true">→</span>
+                <span aria-hidden="true">&rarr;</span>
               </button>
             </div>
           </section>
@@ -152,7 +152,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                           className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
                           aria-label="Previous treasure"
                         >
-                          ←
+                          &larr;
                         </button>
                         <button
                           type="button"
@@ -160,7 +160,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                           className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
                           aria-label="Next treasure"
                         >
-                          →
+                          &rarr;
                         </button>
                       </div>
                     )}
@@ -187,14 +187,14 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       className="inline-flex items-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
                     >
                       View Product
-                      <span aria-hidden="true">→</span>
+                      <span aria-hidden="true">&rarr;</span>
                     </Link>
                     <Link
                       href={`/categories/${activeTreasure.category_slug}`}
                       className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600"
                     >
                       Explore Category
-                      <span aria-hidden="true">→</span>
+                      <span aria-hidden="true">&rarr;</span>
                     </Link>
                   </div>
 
@@ -225,7 +225,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                 onClick={() => setPage("hero")}
                 className="mb-6 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-brass-600 transition-colors hover:text-brass-500"
               >
-                <span aria-hidden="true">←</span>
+                <span aria-hidden="true">&larr;</span>
                 Back
               </button>
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.3em] text-brass-600">
@@ -259,7 +259,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                             <div className="flex items-center gap-2 text-brass-300">
                               <div className="h-px w-8 bg-brass-200" />
                               <span className="text-xl" aria-hidden="true">
-                                ◆
+                                &#10022;
                               </span>
                               <div className="h-px w-8 bg-brass-200" />
                             </div>
@@ -286,7 +286,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       <div className="flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors group-hover:text-brass-500">
                         <span>Explore Collection</span>
                         <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
-                          →
+                          &rarr;
                         </span>
                       </div>
                     </div>
@@ -296,7 +296,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
             ) : (
               <div className="flex flex-col items-center gap-4 border border-dashed border-warm-300 bg-white py-16 text-center">
                 <span className="text-2xl text-brass-300" aria-hidden="true">
-                  ◆
+                  &#10022;
                 </span>
                 <p className="text-sm text-warm-500">
                   Our collections are being curated. Please check back soon.
@@ -309,3 +309,4 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -131,7 +131,7 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
             className="absolute right-4 top-4 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl text-white transition-colors hover:bg-white/20"
             aria-label="Close image viewer"
           >
-            ×
+            x
           </button>
 
           {images.length > 1 && (
@@ -144,7 +144,7 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
               className="absolute left-4 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl text-white transition-colors hover:bg-white/20"
               aria-label="Previous image"
             >
-              ←
+              &larr;
             </button>
           )}
 
@@ -159,7 +159,7 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
               className="max-h-[90vh] w-auto max-w-full object-contain shadow-2xl"
             />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-4 py-2 text-sm text-white">
-              {lightboxIndex + 1} / {images.length}
+              {(lightboxIndex ?? 0) + 1} / {images.length}
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
               className="absolute right-4 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl text-white transition-colors hover:bg-white/20"
               aria-label="Next image"
             >
-              →
+              &rarr;
             </button>
           )}
         </div>
@@ -181,3 +181,4 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -21,7 +21,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
         className="flex transition-transform duration-700 ease-in-out will-change-transform"
         style={{ transform: panel === "hero" ? "translateX(0)" : "translateX(-100%)" }}
       >
-        {/* ── Panel 1: Category Hero ── */}
+        {/* â”€â”€ Panel 1: Category Hero â”€â”€ */}
         <div className="min-w-full bg-warm-900 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
             {/* Breadcrumb */}
@@ -32,7 +32,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                     Home
                   </Link>
                 </li>
-                <li aria-hidden="true">›</li>
+                <li aria-hidden="true">&rsaquo;</li>
                 <li className="text-warm-300">{category.name}</li>
               </ol>
             </nav>
@@ -40,7 +40,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
             <div className="mb-5 flex items-center gap-3">
               <div className="h-px w-8 bg-brass-700" />
               <span className="text-brass-500" aria-hidden="true">
-                ◆
+                &#10022;
               </span>
             </div>
 
@@ -60,7 +60,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                 className="inline-flex items-center gap-2 border border-brass-500 px-8 py-3 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 transition-all duration-200 hover:bg-brass-500 hover:text-warm-900"
               >
                 View {products.length} {products.length === 1 ? "Piece" : "Pieces"}
-                <span aria-hidden="true">→</span>
+                <span aria-hidden="true">&rarr;</span>
               </button>
             </div>
 
@@ -85,7 +85,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
           </div>
         </div>
 
-        {/* ── Panel 2: Products Grid ── */}
+        {/* â”€â”€ Panel 2: Products Grid â”€â”€ */}
         <div className="min-w-full bg-warm-50 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
             {/* Section header */}
@@ -94,7 +94,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                 onClick={() => setPanel("hero")}
                 className="mb-4 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-brass-600 transition-colors hover:text-brass-500"
               >
-                <span aria-hidden="true">←</span>
+                <span aria-hidden="true">&larr;</span>
                 {category.name}
               </button>
               <p className="text-xs font-medium uppercase tracking-[0.25em] text-brass-600">
@@ -128,7 +128,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                             <div className="flex items-center gap-2 text-brass-300">
                               <div className="h-px w-8 bg-brass-200" />
                               <span className="text-xl" aria-hidden="true">
-                                ◆
+                                &#10022;
                               </span>
                               <div className="h-px w-8 bg-brass-200" />
                             </div>
@@ -163,7 +163,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
                       )}
                       <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors group-hover:text-brass-500">
                         <span>View Product</span>
-                        <span aria-hidden="true">→</span>
+                        <span aria-hidden="true">&rarr;</span>
                       </div>
                     </div>
                   </Link>
@@ -172,7 +172,7 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
             ) : (
               <div className="flex flex-col items-center gap-4 border border-dashed border-warm-300 bg-white py-16 text-center">
                 <span className="text-2xl text-brass-300" aria-hidden="true">
-                  ◆
+                  &#10022;
                 </span>
                 <p className="text-sm text-warm-500">
                   Products for this collection are being added. Please check back soon.
@@ -185,3 +185,4 @@ export function CategorySlider({ category, products }: CategorySliderProps) {
     </div>
   );
 }
+

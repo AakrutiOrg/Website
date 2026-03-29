@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatCurrency } from "@/lib/utils";
@@ -57,7 +57,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                   Home
                 </Link>
               </li>
-              <li aria-hidden="true">›</li>
+              <li aria-hidden="true">&rsaquo;</li>
               <li>
                 <Link
                   href={`/categories/${category.slug}`}
@@ -66,7 +66,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                   {category.name}
                 </Link>
               </li>
-              <li aria-hidden="true">›</li>
+              <li aria-hidden="true">&rsaquo;</li>
               <li className="text-warm-100">{product.name}</li>
             </ol>
           </nav>
@@ -132,14 +132,14 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                   className="inline-flex items-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
                 >
                   Back to Collection
-                  <span aria-hidden="true">→</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
                 <Link
                   href="/"
                   className="inline-flex items-center gap-2 border border-warm-600 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-200 transition-colors hover:border-brass-400 hover:bg-warm-50/10 hover:text-brass-200"
                 >
                   Continue Browsing
-                  <span aria-hidden="true">→</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
             </div>
@@ -197,7 +197,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                     </p>
                     <div className="mt-4 flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors group-hover:text-brass-500">
                       <span>View Product</span>
-                      <span aria-hidden="true">→</span>
+                      <span aria-hidden="true">&rarr;</span>
                     </div>
                   </div>
                 </Link>
@@ -209,3 +209,4 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     </div>
   );
 }
+
