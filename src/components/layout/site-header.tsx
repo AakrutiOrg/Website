@@ -118,7 +118,7 @@ export function SiteHeader() {
             <Link
               href="/cart"
               aria-label="View cart"
-              className="relative hidden text-warm-600 transition-colors hover:text-brass-600 md:block"
+              className="relative text-warm-600 transition-colors hover:text-brass-600"
             >
               <BagIcon />
               {totalItems > 0 && (
