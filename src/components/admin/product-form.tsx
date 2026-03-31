@@ -26,6 +26,11 @@ export function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<{ file: File, url: string }[]>([]);
   const newIdRef = useRef(crypto.randomUUID());
+  const size = product?.attributes?.size ?? '';
+  const sizeUnit = product?.attributes?.size_unit ?? 'inch';
+  const color = product?.attributes?.color ?? '';
+  const material = product?.attributes?.material ?? product?.material ?? '';
+  const frameStyle = product?.attributes?.frame_style ?? (product?.is_framed ? 'framed' : 'non_framed');
 
   const isEditing = !!product;
   const targetProductId = isEditing ? product.id : newIdRef.current;
@@ -201,6 +206,66 @@ export function ProductForm({
             </label>
           </div>
 
+          <div className="grid gap-6 sm:grid-cols-3">
+            <label className="block space-y-2 sm:col-span-2">
+              <span className="text-sm font-medium text-warm-800">Size</span>
+              <input
+                type="text"
+                name="size"
+                defaultValue={size}
+                placeholder="e.g. 12 x 18"
+                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-warm-800">Size Unit</span>
+              <select
+                name="size_unit"
+                defaultValue={sizeUnit}
+                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+              >
+                <option value="inch">Inch</option>
+                <option value="cm">cm</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-warm-800">Color</span>
+            <input
+              type="text"
+              name="color"
+              defaultValue={color}
+              placeholder="e.g. Antique Gold, Green, Brass"
+              className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+            />
+          </label>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-warm-800">Material</span>
+              <input
+                type="text"
+                name="material"
+                defaultValue={material}
+                placeholder="e.g. Brass, Cotton, Mixed Media"
+                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-warm-800">Frame Style</span>
+              <select
+                name="frame_style"
+                defaultValue={frameStyle}
+                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+              >
+                <option value="framed">Framed</option>
+                <option value="non_framed">Non-Framed</option>
+              </select>
+            </label>
+          </div>
+
           <label className="block space-y-2">
             <span className="text-sm font-medium text-warm-800">Short Description</span>
             <textarea
@@ -368,4 +433,8 @@ export function ProductForm({
     </>
   );
 }
+
+
+
+
 

@@ -85,6 +85,20 @@ export function CartPageContent() {
                               ? formatCurrency(item.price, item.currency)
                               : "Price TBD"}
                           </p>
+                          {(item.size || item.color) && (
+                            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-warm-600">
+                              {item.size && (
+                                <p>
+                                  <span className="font-medium text-warm-800">Size:</span> {item.size}
+                                </p>
+                              )}
+                              {item.color && (
+                                <p>
+                                  <span className="font-medium text-warm-800">Color:</span> {item.color}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -155,6 +169,13 @@ export function CartPageContent() {
                 </p>
 
                 <div className="mt-8 flex flex-col gap-3">
+                  <Link
+                    href="/checkout"
+                    className="inline-flex items-center justify-center gap-2 border border-warm-900 bg-warm-900 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-white transition-colors hover:bg-warm-800"
+                  >
+                    Checkout
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
                   <Link
                     href="/?view=collections"
                     className="inline-flex items-center justify-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"

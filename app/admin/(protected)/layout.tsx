@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
 
@@ -46,6 +46,20 @@ export default async function AdminProtectedLayout({
               Categories
             </Link>
 
+            <Link
+              href="/admin/orders"
+              className="rounded-xl border border-warm-200 px-4 py-2 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
+            >
+              Orders
+            </Link>
+
+            <Link
+              href="/admin/checkout"
+              className="rounded-xl border border-warm-200 px-4 py-2 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
+            >
+              Checkout
+            </Link>
+
             <form action={signOutAdmin}>
               <button
                 type="submit"
@@ -62,3 +76,4 @@ export default async function AdminProtectedLayout({
     </main>
   );
 }
+

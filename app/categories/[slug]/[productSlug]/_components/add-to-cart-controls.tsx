@@ -14,6 +14,8 @@ type AddToCartControlsProps = {
     price: number | null;
     currency: string;
     stockQuantity: number;
+    size?: string | null;
+    color?: string | null;
   };
 };
 
@@ -44,6 +46,8 @@ export function AddToCartControls({ product }: AddToCartControlsProps) {
       currency: product.currency,
       quantity,
       stockQuantity: product.stockQuantity,
+      size: product.size ?? null,
+      color: product.color ?? null,
     });
 
     setAddedMessage(`${quantity} item${quantity > 1 ? "s" : ""} added to cart`);

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { formatCurrency } from "@/lib/utils";
 import { getMarketAwareProductDetail } from "@/services/products/get-market-aware-product-detail";
+import type { ProductAttributes } from "@/types";
 import { AddToCartControls } from "./_components/add-to-cart-controls";
 import { ProductImageViewer } from "./_components/product-image-viewer";
 
@@ -10,6 +11,43 @@ type ProductPageProps = {
   params: Promise<{ slug: string; productSlug: string }>;
   searchParams: Promise<{ market?: string }>;
 };
+
+function formatSize(attributes: ProductAttributes | null) {
+  const size = attributes?.size ?? null;
+  const sizeUnit = attributes?.size_unit ?? null;
+
+  if (!size) {
+    return "Made to artisan proportions";
+  }
+
+  return `${size} ${sizeUnit === "cm" ? "cm" : "inch"}`;
+}
+
+function formatMaterial(product: { material: string | null; attributes: ProductAttributes | null }) {
+  return product.attributes?.material || product.material || "Handcrafted mixed medium";
+}
+
+function formatFrameStyle(product: { is_framed: boolean; attributes: ProductAttributes | null }) {
+  if (product.attributes?.frame_style === "framed") {
+    return "Framed";
+  }
+
+  if (product.attributes?.frame_style === "non_framed") {
+    return "Non-Framed";
+  }
+
+  return product.is_framed ? "Framed" : "Non-Framed";
+}
+
+function getCartSize(attributes: ProductAttributes | null) {
+  const size = attributes?.size ?? null;
+
+  if (!size) {
+    return null;
+  }
+
+  return `${size} ${attributes?.size_unit === "cm" ? "cm" : "inch"}`;
+}
 
 function formatArtType(artType: string) {
   switch (artType) {
@@ -106,13 +144,25 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                 <div>
                   <p className="text-xs uppercase tracking-[0.25em] text-brass-400">Material</p>
                   <p className="mt-2 text-base font-medium text-warm-100">
-                    {product.material || "Handcrafted mixed medium"}
+                    {formatMaterial(product)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-brass-400">Size</p>
+                  <p className="mt-2 text-base font-medium text-warm-100">
+                    {formatSize(product.attributes)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-brass-400">Color</p>
+                  <p className="mt-2 text-base font-medium text-warm-100">
+                    {product.attributes?.color || "Natural artisan palette"}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.25em] text-brass-400">Frame Style</p>
                   <p className="mt-2 text-base font-medium text-warm-100">
-                    {product.is_framed ? "Framed" : "Non-Framed"}
+                    {formatFrameStyle(product)}
                   </p>
                 </div>
               </div>
@@ -154,6 +204,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                   price: product.price,
                   currency: product.market_currency,
                   stockQuantity: product.stock_quantity,
+                  size: getCartSize(product.attributes),
+                  color: product.attributes?.color ?? null,
                 }}
               />
             </div>
@@ -223,4 +275,5 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     </div>
   );
 }
+
 

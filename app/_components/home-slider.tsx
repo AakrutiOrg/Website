@@ -82,6 +82,10 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
       currency: activeTreasure.market_currency,
       quantity: 1,
       stockQuantity: activeTreasure.stock_quantity,
+      size: activeTreasure.attributes?.size
+        ? `${activeTreasure.attributes.size} ${activeTreasure.attributes?.size_unit === "cm" ? "cm" : "inch"}`
+        : null,
+      color: activeTreasure.attributes?.color ?? null,
     });
 
     setCartMessage("1 item added to cart");

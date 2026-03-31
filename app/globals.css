@@ -54,3 +54,106 @@ select:not(:disabled),
 summary {
   cursor: pointer;
 }
+
+.aakruti-loader-shell {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.94) 0%, rgba(232, 245, 232, 0.88) 52%, rgba(196, 231, 134, 0.18) 100%);
+  box-shadow:
+    0 20px 50px rgba(20, 80, 24, 0.15),
+    inset 0 0 0 1px rgba(132, 190, 53, 0.18);
+}
+
+.aakruti-loader-logo {
+  animation: aakruti-logo-breathe 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  filter: drop-shadow(0 8px 24px rgba(109, 162, 40, 0.22));
+}
+
+.aakruti-tagline {
+  background: linear-gradient(100deg, #3D6517 20%, #84BE35 50%, #3D6517 80%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aakruti-tagline-shimmer 3.2s linear infinite;
+}
+
+.aakruti-tagline-line {
+  animation: aakruti-line-expand 2.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.aakruti-loader-ring {
+  animation: aakruti-loader-spin 2.8s linear infinite;
+}
+
+.aakruti-loader-ring-delayed {
+  animation: aakruti-loader-spin-reverse 3.6s linear infinite;
+}
+
+.aakruti-loader-glow {
+  background:
+    radial-gradient(circle at center, rgba(132, 190, 53, 0.28) 0%, rgba(36, 145, 139, 0.12) 45%, transparent 72%);
+  animation: aakruti-loader-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes aakruti-loader-spin {
+  from {
+    transform: rotate(0deg) scale(0.98);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1);
+  }
+
+  to {
+    transform: rotate(360deg) scale(0.98);
+  }
+}
+
+@keyframes aakruti-loader-spin-reverse {
+  from {
+    transform: rotate(360deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(0.96);
+  }
+
+  to {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes aakruti-logo-breathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 8px 24px rgba(109, 162, 40, 0.22));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 14px 36px rgba(109, 162, 40, 0.52));
+  }
+}
+
+@keyframes aakruti-tagline-shimmer {
+  0% { background-position: 220% center; }
+  100% { background-position: -220% center; }
+}
+
+@keyframes aakruti-line-expand {
+  0%, 100% { opacity: 0.5; transform: scaleX(0.7); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes aakruti-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}

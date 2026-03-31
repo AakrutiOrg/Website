@@ -1,3 +1,12 @@
+export type ProductAttributes = {
+  size?: string | null;
+  size_unit?: "inch" | "cm" | null;
+  color?: string | null;
+  material?: string | null;
+  frame_style?: "framed" | "non_framed" | null;
+  [key: string]: string | number | boolean | null | undefined;
+};
+
 export type Product = {
   id: string;
   category_id: string;
@@ -8,6 +17,7 @@ export type Product = {
   base_price: number | null;
   sku: string | null;
   material: string | null;
+  attributes: ProductAttributes | null;
   art_type: "brass_framed" | "brass_non_framed" | "fabric_patchwork";
   is_framed: boolean;
   is_featured: boolean;
@@ -27,15 +37,16 @@ export type MarketAwareProduct = {
   description: string | null;
   sku: string | null;
   material: string | null;
+  attributes: ProductAttributes | null;
   art_type: string;
   is_framed: boolean;
   is_featured: boolean;
-  
+
   market_id: string;
   market_code: string;
   market_name: string;
   market_currency: string;
-  
+
   product_market_data_id: string;
   price: number | null;
   cost_price: number | null;
@@ -44,6 +55,6 @@ export type MarketAwareProduct = {
   market_active: boolean;
   loyverse_item_id: string | null;
   external_sku: string | null;
-  
+
   primary_image_url: string | null;
 };

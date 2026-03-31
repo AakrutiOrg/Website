@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -6,6 +6,36 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getMarkets } from "@/services/markets/get-markets";
+import type { ProductAttributes } from "@/types";
+
+function buildProductAttributes(formData: FormData): ProductAttributes | null {
+  const size = (formData.get("size") as string)?.trim();
+  const sizeUnit = (formData.get("size_unit") as string)?.trim();
+  const color = (formData.get("color") as string)?.trim();
+  const material = (formData.get("material") as string)?.trim();
+  const frameStyle = (formData.get("frame_style") as string)?.trim();
+
+  const attributes: ProductAttributes = {};
+
+  if (size) {
+    attributes.size = size;
+    attributes.size_unit = sizeUnit === "cm" ? "cm" : "inch";
+  }
+
+  if (color) {
+    attributes.color = color;
+  }
+
+  if (material) {
+    attributes.material = material;
+  }
+
+  if (frameStyle === "framed" || frameStyle === "non_framed") {
+    attributes.frame_style = frameStyle;
+  }
+
+  return Object.keys(attributes).length > 0 ? attributes : null;
+}
 
 async function upsertMarketData(productId: string, formData: FormData) {
   const supabase = await createClient();
@@ -96,6 +126,7 @@ export async function createProduct(formData: FormData) {
   const is_featured = formData.get("is_featured") === "on";
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
+  const attributes = buildProductAttributes(formData);
 
   await ensureFeaturedLimit(supabase, is_featured);
 
@@ -107,6 +138,7 @@ export async function createProduct(formData: FormData) {
     description: description || null,
     base_price,
     sku: sku || null,
+    attributes,
     art_type,
     category_id,
     is_active,
@@ -164,6 +196,7 @@ export async function updateProduct(id: string, formData: FormData) {
   const is_featured = formData.get("is_featured") === "on";
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
+  const attributes = buildProductAttributes(formData);
 
   await ensureFeaturedLimit(supabase, is_featured, id);
 
@@ -176,6 +209,7 @@ export async function updateProduct(id: string, formData: FormData) {
       description: description || null,
       base_price,
       sku: sku || null,
+      attributes,
       art_type,
       category_id,
       is_active,
@@ -240,3 +274,4 @@ export async function deleteProduct(id: string) {
 
   revalidatePath("/admin/products");
 }
+

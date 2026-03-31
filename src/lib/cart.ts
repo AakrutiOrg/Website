@@ -10,4 +10,6 @@ export type CartItem = {
   currency: string;
   quantity: number;
   stockQuantity: number;
+  size?: string | null;
+  color?: string | null;
 };
