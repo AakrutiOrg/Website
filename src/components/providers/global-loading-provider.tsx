@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   useMemo,
   useRef,
   useState,
+  Suspense,
 } from "react";
 
 type GlobalLoadingContextValue = {
@@ -22,9 +23,18 @@ const GlobalLoadingContext = createContext<GlobalLoadingContextValue | null>(nul
 
 const AUTO_STOP_MS = 15000;
 
-export function GlobalLoadingProvider({ children }: { children: React.ReactNode }) {
+function RouteChangeTracker({ stopLoading }: { stopLoading: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    stopLoading();
+  }, [pathname, searchParams, stopLoading]);
+
+  return null;
+}
+
+export function GlobalLoadingProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
@@ -48,10 +58,6 @@ export function GlobalLoadingProvider({ children }: { children: React.ReactNode 
       timeoutRef.current = null;
     }, AUTO_STOP_MS);
   }, [clearAutoStop]);
-
-  useEffect(() => {
-    stopLoading();
-  }, [pathname, searchParams, stopLoading]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -114,6 +120,9 @@ export function GlobalLoadingProvider({ children }: { children: React.ReactNode 
     <GlobalLoadingContext.Provider value={value}>
       {children}
       <GlobalLoadingOverlay visible={isLoading} />
+      <Suspense fallback={null}>
+        <RouteChangeTracker stopLoading={stopLoading} />
+      </Suspense>
     </GlobalLoadingContext.Provider>
   );
 }
