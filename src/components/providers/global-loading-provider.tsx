@@ -140,7 +140,7 @@ export function useGlobalLoading() {
 function GlobalLoadingOverlay({ visible }: { visible: boolean }) {
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-[200] flex items-center justify-center transition-all duration-300 ${visible ? "opacity-100" : "opacity-0"
+      className={`fixed inset-0 z-[200] flex items-center justify-center transition-all duration-300 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       aria-hidden={!visible}
     >

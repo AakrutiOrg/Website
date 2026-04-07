@@ -1,6 +1,8 @@
 import { getCategories } from "@/services/categories/get-categories";
 import { getMarketAwareProducts } from "@/services/products/get-market-aware-catalog";
 
+import { Suspense } from "react";
+
 import { HomeSlider } from "./_components/home-slider";
 
 export default async function Home() {
@@ -16,7 +18,9 @@ export default async function Home() {
 
   return (
     <>
-      <HomeSlider categories={categories} treasures={treasures} />
+      <Suspense fallback={null}>
+        <HomeSlider categories={categories} treasures={treasures} />
+      </Suspense>
 
       <section className="bg-warm-100 pt-0 pb-16 sm:pb-20">
         <div className="mx-auto max-w-3xl px-6 pt-10 text-center sm:px-10 sm:pt-12">
