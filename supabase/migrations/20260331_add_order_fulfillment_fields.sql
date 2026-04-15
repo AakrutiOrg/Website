@@ -10,6 +10,10 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS cancellation_reason text,
   ADD COLUMN IF NOT EXISTS fulfilled_at timestamptz,
   ADD COLUMN IF NOT EXISTS cancelled_at timestamptz;
+  ADD COLUMN IF NOT EXISTS invoice_sent_at timestamptz,
+  ADD COLUMN IF NOT EXISTS discount_amount numeric,
+  ADD COLUMN IF NOT EXISTS discount_type text;
+
 
 ALTER TABLE public.orders
   ADD CONSTRAINT orders_delivery_type_valid

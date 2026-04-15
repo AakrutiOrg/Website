@@ -39,7 +39,8 @@ export function SiteFooter() {
             <ul className="space-y-3 text-sm">
               <li>
                 <Link
-                  href="/"
+                  href="/?view=collections"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                   className="transition-colors hover:text-brass-300"
                 >
                   All Categories

@@ -25,6 +25,9 @@ export type Order = {
   cancellation_reason: string | null;
   fulfilled_at: string | null;
   cancelled_at: string | null;
+  invoice_sent_at: string | null;
+  discount_amount: number | null;
+  discount_type: "percentage" | "absolute" | null;
   created_at: string;
   updated_at: string;
 };

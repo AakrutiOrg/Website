@@ -39,6 +39,8 @@ export function CheckoutPageContent() {
   const [error, setError] = useState("");
   const [successOrderId, setSuccessOrderId] = useState("");
 
+
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -191,53 +193,59 @@ export function CheckoutPageContent() {
               </label>
             </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-warm-800">Address Line 1</span>
-              <input
-                required
-                value={form.addressLine1}
-                onChange={(event) => setForm((current) => ({ ...current, addressLine1: event.target.value }))}
-                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-warm-800">Address Line 2</span>
-              <input
-                value={form.addressLine2}
-                onChange={(event) => setForm((current) => ({ ...current, addressLine2: event.target.value }))}
-                className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-              />
-            </label>
-
-            <div className="grid gap-6 sm:grid-cols-3">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">Town / City</span>
-                <input
-                  required
-                  value={form.city}
-                  onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">County</span>
-                <input
-                  value={form.county}
-                  onChange={(event) => setForm((current) => ({ ...current, county: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">Postcode</span>
-                <input
-                  required
-                  value={form.postcode}
-                  onChange={(event) => setForm((current) => ({ ...current, postcode: event.target.value.toUpperCase() }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm uppercase text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
-              </label>
+            <div className="border-t border-warm-100 mt-6 pt-6 uppercase tracking-[0.1em] text-xs font-semibold text-brass-600 mb-2">
+               Delivery Address
             </div>
+
+              <div className="space-y-6">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-warm-800">Address Line 1</span>
+                  <input
+                    required
+                    value={form.addressLine1}
+                    onChange={(event) => setForm((current) => ({ ...current, addressLine1: event.target.value }))}
+                    className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-warm-800">Address Line 2</span>
+                  <input
+                    value={form.addressLine2}
+                    onChange={(event) => setForm((current) => ({ ...current, addressLine2: event.target.value }))}
+                    className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                  />
+                </label>
+
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-warm-800">Town / City</span>
+                    <input
+                      required
+                      value={form.city}
+                      onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
+                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                    />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-warm-800">County</span>
+                    <input
+                      value={form.county}
+                      onChange={(event) => setForm((current) => ({ ...current, county: event.target.value }))}
+                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                    />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-warm-800">Postcode</span>
+                    <input
+                      required
+                      value={form.postcode}
+                      onChange={(event) => setForm((current) => ({ ...current, postcode: event.target.value.toUpperCase() }))}
+                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm uppercase text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                    />
+                  </label>
+                </div>
+              </div>
 
             <div className="border-t border-warm-100 pt-4">
               <button

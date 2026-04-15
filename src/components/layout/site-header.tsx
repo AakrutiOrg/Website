@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 
 const NAV_LINKS = [
-  { label: "Collections", href: "/" },
+  { label: "Collections", href: "/?view=collections" },
   { label: "About", href: "#" },
   { label: "Contact", href: "#" },
 ];

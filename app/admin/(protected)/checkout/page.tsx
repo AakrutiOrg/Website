@@ -82,6 +82,29 @@ export default async function AdminCheckoutSettingsPage() {
           />
         </label>
 
+        <div className="border-t border-warm-100 pt-6">
+          <h3 className="font-heading text-2xl font-semibold text-warm-900">
+            Payment Details
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-warm-600">
+            These bank account details will be included in every invoice sent to customers.
+          </p>
+        </div>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-warm-800">UK Bank Account Details</span>
+          <textarea
+            name="bank_account_details"
+            defaultValue={settings.bank_account_details ?? ""}
+            rows={6}
+            placeholder={"Account Name: Aakruti Ltd\nSort Code: 00-00-00\nAccount Number: 12345678\nBank: Barclays"}
+            className="w-full resize-y rounded-xl border border-warm-200 bg-white px-4 py-3 font-mono text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+          />
+          <span className="text-xs text-warm-500">
+            Displayed verbatim in the invoice email sent to customers.
+          </span>
+        </label>
+
         <div className="border-t border-warm-100 pt-4">
           <button
             type="submit"

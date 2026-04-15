@@ -18,6 +18,7 @@ export async function saveCheckoutSettings(formData: FormData) {
   const templateInput = (formData.get("order_email_template") as string) || "";
   const customerSubjectInput = (formData.get("customer_email_subject") as string) || "";
   const customerTemplateInput = (formData.get("customer_email_template") as string) || "";
+  const bankAccountDetailsInput = (formData.get("bank_account_details") as string) || "";
 
   const order_notification_emails = emailsInput
     .split(/[\n,]+/)
@@ -45,6 +46,7 @@ export async function saveCheckoutSettings(formData: FormData) {
       order_email_template,
       customer_email_subject,
       customer_email_template,
+      bank_account_details: bankAccountDetailsInput.trim(),
     },
     { onConflict: "id" },
   );

@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResendEnv } from "@/lib/env";
-import type { DeliveryType, Order, OrderItem } from "@/types";
+import type { CheckoutSettings, DeliveryType, Order, OrderItem } from "@/types";
 
 async function getInlineLogoAttachment() {
   const logoPath = path.join(process.cwd(), "public", "logo.png");
@@ -155,6 +155,317 @@ function buildCancellationEmailHtml(args: {
   </table>
 </body>
 </html>`;
+}
+
+type InvoiceItem = {
+  name: string;
+  variant: string | null;
+  quantity: number;
+  unitPrice: number | null;
+  imageUrl: string | null;
+};
+
+function buildInvoiceEmailHtml(args: {
+  orderId: string;
+  customerName: string;
+  orderDate: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  discountType: "percentage" | "absolute" | null;
+  discountAmount: number | null;
+  totalDue: number;
+  bankAccountDetails: string;
+}) {
+  const { orderId, customerName, orderDate, items, subtotal, discountType, discountAmount, totalDue, bankAccountDetails } = args;
+
+  const itemRows = items.map((item) => {
+    const lineTotal = item.unitPrice != null ? item.unitPrice * item.quantity : null;
+    const imgCell = item.imageUrl
+      ? `<img src="${item.imageUrl}" alt="${item.name}" width="64" height="64" style="width:64px;height:64px;object-fit:cover;border-radius:6px;display:block;" />`
+      : `<div style="width:64px;height:64px;background:#e8f5e8;border-radius:6px;display:flex;align-items:center;justify-content:center;"></div>`;
+
+    return `<tr>
+      <td style="padding:14px 16px;border-top:1px solid #e8f5e8;vertical-align:middle;">${imgCell}</td>
+      <td style="padding:14px 16px;border-top:1px solid #e8f5e8;vertical-align:middle;">
+        <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#145018;">${item.name}</p>
+        ${item.variant ? `<p style="margin:0;font-size:12px;color:#2e7d32;">${item.variant}</p>` : ""}
+      </td>
+      <td style="padding:14px 16px;border-top:1px solid #e8f5e8;text-align:center;vertical-align:middle;font-size:14px;color:#145018;">${item.quantity}</td>
+      <td style="padding:14px 16px;border-top:1px solid #e8f5e8;text-align:right;vertical-align:middle;font-size:14px;color:#145018;">${item.unitPrice != null ? `£${item.unitPrice.toFixed(2)}` : "—"}</td>
+      <td style="padding:14px 16px;border-top:1px solid #e8f5e8;text-align:right;vertical-align:middle;font-size:14px;font-weight:700;color:#145018;">${lineTotal != null ? `£${lineTotal.toFixed(2)}` : "—"}</td>
+    </tr>`;
+  }).join("");
+
+  const discountLabel = discountType === "percentage"
+    ? `Discount (${discountAmount}%)`
+    : "Discount";
+
+  const discountValue = discountType === "percentage"
+    ? subtotal * (discountAmount! / 100)
+    : discountAmount!;
+
+  const discountRow = discountAmount && discountAmount > 0 ? `
+    <tr>
+      <td colspan="4" style="padding:10px 16px;text-align:right;font-size:13px;color:#2e7d32;">${discountLabel}</td>
+      <td style="padding:10px 16px;text-align:right;font-size:13px;color:#b45309;">−£${discountValue.toFixed(2)}</td>
+    </tr>` : "";
+
+  const bankDetailsHtml = bankAccountDetails.trim()
+    ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e8f5e8;margin:0 0 28px 0;">
+        <tr><td style="padding:12px 16px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;">Bank Transfer Details</td></tr>
+        <tr><td style="padding:16px;font-size:14px;line-height:24px;color:#145018;white-space:pre-line;">${bankAccountDetails.trim()}</td></tr>
+      </table>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0;padding:0;background:#f5fbf5;font-family:Segoe UI,Helvetica Neue,Arial,sans-serif;color:#145018;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5fbf5;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #c8e6c8;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
+            <img src="cid:aakruti-logo" alt="Aakruti" width="150" style="display:block;margin:0 auto 16px auto;width:150px;max-width:100%;height:auto;" />
+            <p style="margin:0;font-size:14px;line-height:22px;color:#e8f5e8;font-family:'Great Vibes',cursive;">Shaping your Abode</p>
+            <p style="margin:16px 0 0 0;font-size:14px;line-height:22px;color:#e8f5e8;">Order Reference</p>
+            <p style="margin:8px 0 0 0;font-size:24px;line-height:30px;font-weight:700;color:#ffffff;">${orderId}</p>
+            <p style="margin:6px 0 0 0;font-size:12px;color:#e8f5e8;">${orderDate}</p>
+          </td>
+        </tr>
+
+        <!-- Greeting -->
+        <tr>
+          <td style="padding:32px 24px 8px 24px;">
+            <p style="margin:0 0 16px 0;font-size:18px;line-height:28px;color:#145018;">Dear ${customerName},</p>
+            <p style="margin:0;font-size:15px;line-height:28px;color:#2e7d32;">
+              Thanks for choosing Treasures from Aakruti. Please find below your invoice summary.
+              Kindly arrange payment via bank transfer using the details provided below.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Items table -->
+        <tr>
+          <td style="padding:20px 24px 0 24px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e8f5e8;">
+              <thead>
+                <tr style="background:#f5fbf5;">
+                  <td style="padding:12px 14px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;width:80px;"></td>
+                  <td style="padding:12px 14px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;">Item</td>
+                  <td style="padding:12px 14px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;text-align:center;">Qty</td>
+                  <td style="padding:12px 14px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;text-align:right;">Unit Price</td>
+                  <td style="padding:12px 14px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;text-align:right;">Total</td>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemRows}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4" style="padding:12px 16px;text-align:right;font-size:13px;color:#2e7d32;border-top:2px solid #e8f5e8;">Subtotal</td>
+                  <td style="padding:12px 16px;text-align:right;font-size:13px;color:#145018;border-top:2px solid #e8f5e8;">£${subtotal.toFixed(2)}</td>
+                </tr>
+                ${discountRow}
+                <tr style="background:#f5fbf5;">
+                  <td colspan="4" style="padding:14px 16px;text-align:right;font-size:15px;font-weight:700;color:#145018;border-top:2px solid #c8e6c8;">Total Due</td>
+                  <td style="padding:14px 16px;text-align:right;font-size:18px;font-weight:700;color:#6da228;border-top:2px solid #c8e6c8;">£${totalDue.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Bank details -->
+        <tr>
+          <td style="padding:28px 24px 0 24px;">
+            ${bankDetailsHtml}
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 24px;background:#f5fbf5;text-align:center;font-size:12px;color:#7ab57c;border-top:1px solid #e8f5e8;">
+            Aakruti · Shaping your Abode
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function generateInvoiceHtml(
+  orderDbId: string,
+  forAdminPreview: boolean = false,
+  overrideDiscountType?: "percentage" | "absolute" | null,
+  overrideDiscountValue?: number | null
+) {
+  const supabase = createAdminClient();
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderDbId)
+    .single<Order>();
+
+  if (orderError || !order) throw new Error("Order not found.");
+
+  const { data: items } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_db_id", orderDbId)
+    .returns<OrderItem[]>();
+
+  const { data: settingsData } = await supabase
+    .from("checkout_settings")
+    .select("bank_account_details")
+    .eq("id", "default")
+    .maybeSingle<Pick<CheckoutSettings, "bank_account_details">>();
+
+  const bankAccountDetails = settingsData?.bank_account_details ?? "";
+
+  // Resolve product images from the view (UK market default)
+  const productIds = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
+  const imageMap = new Map<string, string | null>();
+  if (productIds.length > 0) {
+    const { data: products } = await supabase
+      .from("product_catalog_market_view")
+      .select("product_id, primary_image_url")
+      .in("product_id", productIds);
+
+    for (const p of products ?? []) {
+      if (p.primary_image_url) {
+        const { data: { publicUrl } } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(p.primary_image_url);
+        imageMap.set(p.product_id, publicUrl);
+      } else {
+        imageMap.set(p.product_id, null);
+      }
+    }
+  }
+
+  let logoUrl = "cid:aakruti-logo";
+  if (forAdminPreview) {
+    const { data: { publicUrl: fallbackLogoUrl } } = supabase.storage
+      .from("public-assets")
+      .getPublicUrl("logo.png"); // Assuming logo.png in public-assets, otherwise fallback to root if deployed. 
+    logoUrl = "/logo.png"; // Works usually for local preview, admin is on same origin
+  }
+
+  const invoiceItems: InvoiceItem[] = (items ?? []).map((item) => {
+    const variant = [
+      item.selected_variant_json?.size ? `Size: ${item.selected_variant_json.size}` : null,
+      item.selected_variant_json?.color ? `Colour: ${item.selected_variant_json.color}` : null,
+    ].filter(Boolean).join(" · ") || null;
+
+    return {
+      name: item.product_name_snapshot,
+      variant,
+      quantity: item.quantity,
+      unitPrice: item.unit_price_snapshot,
+      imageUrl: item.product_id ? (imageMap.get(item.product_id) ?? null) : null,
+    };
+  });
+
+  const subtotal = invoiceItems.reduce((sum, item) => {
+    return sum + (item.unitPrice != null ? item.unitPrice * item.quantity : 0);
+  }, 0);
+
+  const discountType = overrideDiscountType !== undefined ? overrideDiscountType : order.discount_type;
+  const discountValue = overrideDiscountValue !== undefined ? overrideDiscountValue : order.discount_amount;
+
+  let totalDue = subtotal;
+  if (discountValue && discountValue > 0) {
+    if (discountType === "percentage") {
+      totalDue = subtotal * (1 - discountValue / 100);
+    } else if (discountType === "absolute") {
+      totalDue = Math.max(0, subtotal - discountValue);
+    }
+  }
+
+  const orderDate = new Date(order.created_at).toLocaleDateString("en-GB", {
+    day: "2-digit", month: "long", year: "numeric",
+  });
+
+  const html = buildInvoiceEmailHtml({
+    orderId: order.order_id,
+    customerName: order.customer_name,
+    orderDate,
+    items: invoiceItems,
+    subtotal,
+    discountType: discountValue && discountValue > 0 ? discountType : null,
+    discountAmount: discountValue && discountValue > 0 ? discountValue : null,
+    totalDue,
+    bankAccountDetails,
+  });
+
+  if (forAdminPreview) {
+    return html.replace("cid:aakruti-logo", logoUrl);
+  }
+
+  return { html, totalDue, order };
+}
+
+export async function sendInvoice(
+  orderDbId: string,
+  discountType: "percentage" | "absolute" | null,
+  discountValue: number | null,
+) {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+
+  const { html, totalDue, order } = await generateInvoiceHtml(orderDbId, false, discountType, discountValue) as { html: string; totalDue: number; order: Order };
+
+  if (!order.email) throw new Error("This order has no customer email address.");
+
+  const bankAccountDetails = ""; // Optional: extract bank details text for plain-text email here if necessary, or simplify text part
+
+  const resendEnv = getResendEnv();
+  const logoAttachment = await getInlineLogoAttachment();
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendEnv.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: resendEnv.RESEND_FROM_EMAIL,
+      to: [order.email],
+      subject: `Invoice for your Aakruti order ${order.order_id}`,
+      html,
+      text: `Dear ${order.customer_name},\n\nPlease find your invoice for order ${order.order_id}.\n\nTotal Due: £${totalDue.toFixed(2)}\n\nAakruti · Shaping your Abode`,
+      attachments: [logoAttachment],
+    }),
+  });
+
+  if (!emailRes.ok) {
+    const body = await emailRes.text().catch(() => "");
+    throw new Error(`Failed to send invoice email: ${body}`);
+  }
+
+  const { error: updateError } = await createAdminClient()
+    .from("orders")
+    .update({
+      invoice_sent_at: new Date().toISOString(),
+      discount_type: discountValue && discountValue > 0 ? discountType : null,
+      discount_amount: discountValue && discountValue > 0 ? discountValue : null,
+      status: order.status === "pending" || order.status === "confirmed" ? "contacted" : undefined,
+    })
+    .eq("id", orderDbId);
+
+  if (updateError) {
+    throw new Error(`Invoice sent successfully, but failed to update status in database: ${updateError.message}`);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${order.order_id}`);
 }
 
 export async function fulfillOrder(

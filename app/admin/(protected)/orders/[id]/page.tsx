@@ -80,7 +80,13 @@ export default async function OrderDetailPage({ params }: Props) {
           </p>
         </div>
 
-        {canAct && <OrderActionButtons orderDbId={order.id} />}
+        {canAct && (
+          <OrderActionButtons
+            orderDbId={order.id}
+            invoiceSentAt={order.invoice_sent_at ?? null}
+            hasEmail={!!order.email}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -173,7 +179,71 @@ export default async function OrderDetailPage({ params }: Props) {
 
         {/* Right column: status details */}
         <div className="space-y-6">
-          {/* Fulfilment info */}
+          {/* Workflow Status */}
+          <section className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 font-heading text-base font-semibold text-warm-900">Workflow Timeline</h3>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brass-500 text-white">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                       <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                    </svg>
+                  </div>
+                  <div className="w-px flex-1 bg-warm-200 my-1"></div>
+                </div>
+                <div className="pb-4">
+                  <p className="text-sm font-semibold text-warm-900">Order Placed</p>
+                  <p className="text-xs text-warm-500">{new Date(order.created_at).toLocaleString("en-GB")}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${order.invoice_sent_at ? "bg-brass-500 text-white" : "border-2 border-warm-200 bg-white text-transparent"}`}>
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                       <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                    </svg>
+                  </div>
+                  <div className={`w-px flex-1 ${order.invoice_sent_at && order.status !== 'cancelled' ? "bg-warm-200" : "bg-transparent"} my-1`}></div>
+                </div>
+                <div className="pb-4">
+                  <p className={`text-sm font-semibold ${order.invoice_sent_at ? "text-warm-900" : "text-warm-400"}`}>Invoice Sent</p>
+                  {order.invoice_sent_at && <p className="text-xs text-warm-500">{new Date(order.invoice_sent_at).toLocaleString("en-GB")}</p>}
+                </div>
+              </div>
+
+              {order.status !== 'cancelled' ? (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${order.fulfilled_at ? "bg-brass-500 text-white" : "border-2 border-warm-200 bg-white text-transparent"}`}>
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${order.fulfilled_at ? "text-warm-900" : "text-warm-400"}`}>Fulfilled</p>
+                    {order.fulfilled_at && <p className="text-xs text-warm-500">{new Date(order.fulfilled_at).toLocaleString("en-GB")}</p>}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M4.22 4.22a.75.75 0 0 1 1.06 0L8 6.94l2.72-2.72a.75.75 0 1 1 1.06 1.06L9.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L8 9.06l-2.72 2.72a.75.75 0 0 1-1.06-1.06L6.94 8 4.22 5.28a.75.75 0 0 1 0-1.06Z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-700">Cancelled</p>
+                    {order.cancelled_at && <p className="text-xs text-red-500">{new Date(order.cancelled_at).toLocaleString("en-GB")}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
           {order.status === "fulfilled" && (
             <section className="rounded-2xl border border-brass-200 bg-brass-50 p-6">
               <h3 className="mb-3 font-heading text-base font-semibold text-brass-800">Fulfilment</h3>
@@ -263,10 +333,49 @@ export default async function OrderDetailPage({ params }: Props) {
             </section>
           )}
 
+          {/* Invoice info */}
+          {order.invoice_sent_at && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+              <h3 className="mb-3 font-heading text-base font-semibold text-amber-800">Invoice</h3>
+              <dl className="space-y-2">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-amber-600">Sent On</dt>
+                  <dd className="mt-1 text-sm font-medium text-amber-900">
+                    {new Date(order.invoice_sent_at).toLocaleDateString("en-GB", {
+                      day: "2-digit", month: "short", year: "numeric",
+                    })}
+                  </dd>
+                </div>
+                {order.discount_amount != null && order.discount_amount > 0 && (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-amber-600">Discount Applied</dt>
+                    <dd className="mt-1 text-sm font-medium text-amber-900">
+                      {order.discount_type === "percentage"
+                        ? `${order.discount_amount}%`
+                        : `£${order.discount_amount.toFixed(2)}`}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
+
           {/* Order meta */}
           <section className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
             <h3 className="mb-3 font-heading text-base font-semibold text-warm-900">Order Info</h3>
             <dl className="space-y-3">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Invoice</dt>
+                <dd className="mt-1">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    order.invoice_sent_at
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-warm-100 text-warm-500"
+                  }`}>
+                    {order.invoice_sent_at ? "Sent" : "Not sent"}
+                  </span>
+                </dd>
+              </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Email Status</dt>
                 <dd className="mt-1">

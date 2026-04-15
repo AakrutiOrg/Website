@@ -4,6 +4,7 @@ export type CheckoutSettings = {
   order_email_template: string;
   customer_email_subject: string;
   customer_email_template: string;
+  bank_account_details: string;
   created_at: string;
   updated_at: string;
 };
