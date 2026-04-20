@@ -11,7 +11,77 @@ import {
   formatShippingAddress,
 } from "@/lib/checkout";
 import { getResendEnv } from "@/lib/env";
+import { getCurrentMarket } from "@/lib/market/resolve-market";
+import { createOrderId } from "@/lib/orders/create-order-id";
 import type { CheckoutCartItem, CheckoutCustomer, CheckoutSettings } from "@/types";
+
+type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
+
+async function decrementStockForItems(
+  supabase: SupabaseAdminClient,
+  items: CheckoutCartItem[],
+  marketId: string,
+  orderDbId: string,
+  orderRef: string,
+) {
+  // Aggregate quantities by product — a cart can theoretically have duplicate entries
+  const productQuantities = new Map<string, number>();
+  for (const item of items) {
+    if (item.id) {
+      productQuantities.set(item.id, (productQuantities.get(item.id) ?? 0) + item.quantity);
+    }
+  }
+
+  const productIds = [...productQuantities.keys()];
+  if (productIds.length === 0) return;
+
+  const { data: marketDataRows, error } = await supabase
+    .from("product_market_data")
+    .select("id, product_id, stock_quantity")
+    .eq("market_id", marketId)
+    .in("product_id", productIds);
+
+  if (error || !marketDataRows?.length) return;
+
+  const inventoryEvents: {
+    source: string;
+    product_id: string;
+    product_market_data_id: string;
+    market_id: string;
+    quantity_delta: number;
+    change_type: string;
+    raw_payload: object;
+    processed_at: string;
+  }[] = [];
+
+  for (const row of marketDataRows) {
+    const qty = productQuantities.get(row.product_id);
+    if (!qty) continue;
+
+    // Cap at 0 so we never violate the stock_quantity >= 0 DB constraint
+    const newStock = Math.max(0, row.stock_quantity - qty);
+
+    await supabase
+      .from("product_market_data")
+      .update({ stock_quantity: newStock })
+      .eq("id", row.id);
+
+    inventoryEvents.push({
+      source: "order",
+      product_id: row.product_id,
+      product_market_data_id: row.id,
+      market_id: marketId,
+      quantity_delta: -qty,
+      change_type: "order_placed",
+      raw_payload: { order_db_id: orderDbId, order_ref: orderRef },
+      processed_at: new Date().toISOString(),
+    });
+  }
+
+  if (inventoryEvents.length > 0) {
+    await supabase.from("inventory_events").insert(inventoryEvents);
+  }
+}
 
 type CheckoutRequestBody = {
   customer: CheckoutCustomer;
@@ -28,13 +98,6 @@ function isValidCustomer(customer: CheckoutCustomer) {
     customer.city.trim() &&
     customer.postcode.trim()
   );
-}
-
-function createOrderId() {
-  const date = new Date();
-  const stamp = `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `AKR-${stamp}-${suffix}`;
 }
 
 async function getInlineLogoAttachment() {
@@ -67,11 +130,7 @@ export async function POST(request: Request) {
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const logoUrl = "cid:aakruti-logo";
 
-    const { data: ukMarket } = await supabase
-      .from("markets")
-      .select("id")
-      .eq("code", "UK")
-      .maybeSingle<{ id: string }>();
+    const market = await getCurrentMarket();
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -88,7 +147,7 @@ export async function POST(request: Request) {
         postal_code: customer.postcode,
         subtotal,
         total_items: totalItems,
-        market_id: ukMarket?.id ?? null,
+        market_id: market.id,
         status: "pending",
         email_status: "pending",
       })
@@ -116,6 +175,13 @@ export async function POST(request: Request) {
 
     if (orderItemsError) {
       return NextResponse.json({ error: `Could not save order items: ${orderItemsError.message}` }, { status: 500 });
+    }
+
+    // Decrement stock and log inventory events — best-effort, never blocks the checkout
+    try {
+      await decrementStockForItems(supabase, items, market.id, order.id, orderId);
+    } catch {
+      // Stock decrement failure should not block the order
     }
 
     const { data: settingsData } = await supabase

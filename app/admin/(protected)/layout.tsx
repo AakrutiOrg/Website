@@ -58,6 +58,13 @@ export default async function AdminProtectedLayout({
             </Link>
 
             <Link
+              href="/admin/pos"
+              className="rounded-xl border border-warm-200 px-4 py-2 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
+            >
+              POS
+            </Link>
+
+            <Link
               href="/admin/orders"
               className="rounded-xl border border-warm-200 px-4 py-2 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
             >
@@ -87,4 +94,3 @@ export default async function AdminProtectedLayout({
     </main>
   );
 }
-

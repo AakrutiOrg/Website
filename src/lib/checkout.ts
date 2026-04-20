@@ -68,6 +68,7 @@ export function getDefaultCheckoutSettings(): CheckoutSettings {
     order_email_template: DEFAULT_CHECKOUT_TEMPLATE,
     customer_email_subject: DEFAULT_CUSTOMER_CONFIRMATION_SUBJECT,
     customer_email_template: DEFAULT_CUSTOMER_CONFIRMATION_TEMPLATE,
+    bank_account_details: "",
     created_at: now,
     updated_at: now,
   };

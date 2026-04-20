@@ -15,6 +15,12 @@ create table public.orders (
   subtotal numeric(12, 2) null,
   total_items integer not null default 0,
   email_status text not null default 'pending'::text,
+  sale_channel text not null default 'online'::text,
+  payment_method text null,
+  payment_status text not null default 'pending'::text,
+  payment_provider text null,
+  payment_reference text null,
+  paid_at timestamp with time zone null,
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
   market_id uuid null,
@@ -88,6 +94,30 @@ create table public.orders (
         array['pending'::text, 'sent'::text, 'failed'::text]
       )
     )
+  ),
+  constraint orders_sale_channel_valid check (
+    (
+      sale_channel = any (
+        array['online'::text, 'pos'::text]
+      )
+    )
+  ),
+  constraint orders_payment_method_valid check (
+    (
+      (payment_method is null)
+      or (
+        payment_method = any (
+          array['cash'::text, 'sumup_solo'::text, 'bank_transfer'::text]
+        )
+      )
+    )
+  ),
+  constraint orders_payment_status_valid check (
+    (
+      payment_status = any (
+        array['pending'::text, 'paid'::text, 'failed'::text]
+      )
+    )
   )
 ) TABLESPACE pg_default;
 
@@ -100,6 +130,9 @@ create index IF not exists idx_orders_created_at on public.orders using btree (c
 create index IF not exists idx_orders_phone on public.orders using btree (phone) TABLESPACE pg_default;
 
 create index IF not exists idx_orders_market_id on public.orders using btree (market_id) TABLESPACE pg_default;
+create index IF not exists idx_orders_sale_channel on public.orders using btree (sale_channel) TABLESPACE pg_default;
+create index IF not exists idx_orders_payment_status on public.orders using btree (payment_status) TABLESPACE pg_default;
+create index IF not exists idx_orders_paid_at on public.orders using btree (paid_at desc) TABLESPACE pg_default;
 
 create trigger trg_orders_updated_at BEFORE
 update on orders for EACH row

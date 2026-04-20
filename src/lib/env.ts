@@ -46,3 +46,19 @@ export function getResendEnv() {
     RESEND_FROM_EMAIL: fromEmail,
   };
 }
+
+export function getOptionalSumUpEnv() {
+  const apiKey = process.env.SUMUP_API_KEY;
+  const merchantCode = process.env.SUMUP_MERCHANT_CODE;
+  const readerId = process.env.SUMUP_SOLO_READER_ID;
+
+  if (!apiKey || !merchantCode || !readerId) {
+    return null;
+  }
+
+  return {
+    SUMUP_API_KEY: apiKey,
+    SUMUP_MERCHANT_CODE: merchantCode,
+    SUMUP_SOLO_READER_ID: readerId,
+  };
+}

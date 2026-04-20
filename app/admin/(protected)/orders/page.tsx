@@ -10,6 +10,12 @@ const STATUS_FILTERS = [
   { label: "Cancelled", value: "cancelled" },
 ] as const;
 
+const SOURCE_FILTERS = [
+  { label: "All sources", value: "" },
+  { label: "Online", value: "online" },
+  { label: "POS", value: "pos" },
+] as const;
+
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-amber-100 text-amber-800" },
   confirmed: { label: "Confirmed", className: "bg-blue-100 text-blue-800" },
@@ -20,11 +26,11 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 type OrdersPageProps = {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; source?: string }>;
 };
 
 export default async function AdminOrdersPage({ searchParams }: OrdersPageProps) {
-  const { status } = await searchParams;
+  const { status, source } = await searchParams;
   const supabase = await createClient();
 
   let query = supabase
@@ -36,6 +42,10 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
     query = query.eq("status", status);
   }
 
+  if (source) {
+    query = query.eq("sale_channel", source);
+  }
+
   const { data: orders } = await query.returns<Order[]>();
 
   return (
@@ -45,26 +55,50 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
           <h2 className="font-heading text-2xl font-semibold text-warm-900">Orders</h2>
           <p className="mt-1 text-sm text-warm-500">
             {orders?.length ?? 0} order{(orders?.length ?? 0) !== 1 ? "s" : ""}
-            {status ? ` · filtered by ${status}` : ""}
+            {status ? ` · ${status}` : ""}
+            {source ? ` · ${source}` : ""}
           </p>
         </div>
       </div>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {STATUS_FILTERS.map((filter) => (
-          <Link
-            key={filter.value}
-            href={filter.value ? `/admin/orders?status=${filter.value}` : "/admin/orders"}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-              (status ?? "") === filter.value
-                ? "bg-brass-600 text-white"
-                : "border border-warm-200 bg-white text-warm-700 hover:border-brass-400 hover:text-brass-700"
-            }`}
-          >
-            {filter.label}
-          </Link>
-        ))}
+      {/* Status + source filter tabs */}
+      <div className="space-y-2">
+        <div className="flex gap-2 flex-wrap">
+          {STATUS_FILTERS.map((filter) => {
+            const href = new URLSearchParams({ ...(filter.value ? { status: filter.value } : {}), ...(source ? { source } : {}) }).toString();
+            return (
+              <Link
+                key={filter.value}
+                href={href ? `/admin/orders?${href}` : "/admin/orders"}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  (status ?? "") === filter.value
+                    ? "bg-brass-600 text-white"
+                    : "border border-warm-200 bg-white text-warm-700 hover:border-brass-400 hover:text-brass-700"
+                }`}
+              >
+                {filter.label}
+              </Link>
+            );
+          })}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {SOURCE_FILTERS.map((filter) => {
+            const href = new URLSearchParams({ ...(status ? { status } : {}), ...(filter.value ? { source: filter.value } : {}) }).toString();
+            return (
+              <Link
+                key={filter.value}
+                href={href ? `/admin/orders?${href}` : "/admin/orders"}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  (source ?? "") === filter.value
+                    ? "bg-warm-800 text-white"
+                    : "border border-warm-200 bg-white text-warm-600 hover:border-warm-400 hover:text-warm-800"
+                }`}
+              >
+                {filter.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-warm-200 bg-white shadow-sm">
@@ -82,6 +116,7 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Items</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Date</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Status</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Source</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
@@ -111,6 +146,15 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badge.className}`}>
                           {badge.label}
                         </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {order.sale_channel === "pos" ? (
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                            POS
+                          </span>
+                        ) : (
+                          <span className="text-xs text-warm-400">Online</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-right">
                         <Link

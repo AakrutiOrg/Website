@@ -591,6 +591,65 @@ export async function cancelOrder(orderDbId: string, reason: string) {
     throw new Error(`Failed to update order: ${updateError.message}`);
   }
 
+  // Restore stock and log inventory events — best-effort, never blocks the cancellation
+  if (order.market_id && items?.length) {
+    try {
+      const productQuantities = new Map<string, number>();
+      for (const item of items) {
+        if (item.product_id) {
+          productQuantities.set(item.product_id, (productQuantities.get(item.product_id) ?? 0) + item.quantity);
+        }
+      }
+
+      const productIds = [...productQuantities.keys()];
+      if (productIds.length > 0) {
+        const { data: marketDataRows } = await supabase
+          .from("product_market_data")
+          .select("id, product_id, stock_quantity")
+          .eq("market_id", order.market_id)
+          .in("product_id", productIds);
+
+        const inventoryEvents: {
+          source: string;
+          product_id: string;
+          product_market_data_id: string;
+          market_id: string;
+          quantity_delta: number;
+          change_type: string;
+          raw_payload: object;
+          processed_at: string;
+        }[] = [];
+
+        for (const row of marketDataRows ?? []) {
+          const qty = productQuantities.get(row.product_id);
+          if (!qty) continue;
+
+          await supabase
+            .from("product_market_data")
+            .update({ stock_quantity: row.stock_quantity + qty })
+            .eq("id", row.id);
+
+          inventoryEvents.push({
+            source: "order",
+            product_id: row.product_id,
+            product_market_data_id: row.id,
+            market_id: order.market_id,
+            quantity_delta: qty,
+            change_type: "order_cancelled",
+            raw_payload: { order_db_id: orderDbId, order_ref: order.order_id },
+            processed_at: new Date().toISOString(),
+          });
+        }
+
+        if (inventoryEvents.length > 0) {
+          await supabase.from("inventory_events").insert(inventoryEvents);
+        }
+      }
+    } catch {
+      // Stock restore failure should not block the cancellation
+    }
+  }
+
   if (order.email) {
     try {
       const resendEnv = getResendEnv();

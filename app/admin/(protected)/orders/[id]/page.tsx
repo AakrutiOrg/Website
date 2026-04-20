@@ -365,6 +365,42 @@ export default async function OrderDetailPage({ params }: Props) {
             <h3 className="mb-3 font-heading text-base font-semibold text-warm-900">Order Info</h3>
             <dl className="space-y-3">
               <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Channel</dt>
+                <dd className="mt-1 text-sm font-medium capitalize text-warm-900">
+                  {order.sale_channel === "pos" ? "POS" : "Online"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Payment Method</dt>
+                <dd className="mt-1 text-sm font-medium text-warm-900">
+                  {order.payment_method ? order.payment_method.replaceAll("_", " ") : "Not captured"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Payment Status</dt>
+                <dd className="mt-1">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    order.payment_status === "paid"
+                      ? "bg-brass-100 text-brass-700"
+                      : order.payment_status === "failed"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {order.payment_status}
+                  </span>
+                </dd>
+              </div>
+              {order.paid_at && (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Paid On</dt>
+                  <dd className="mt-1 text-sm text-warm-700">
+                    {new Date(order.paid_at).toLocaleDateString("en-GB", {
+                      day: "2-digit", month: "short", year: "numeric",
+                    })}
+                  </dd>
+                </div>
+              )}
+              <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-warm-400">Invoice</dt>
                 <dd className="mt-1">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${

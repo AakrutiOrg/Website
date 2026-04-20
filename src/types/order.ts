@@ -1,5 +1,8 @@
 export type OrderStatus = "pending" | "confirmed" | "contacted" | "fulfilled" | "closed" | "cancelled";
 export type DeliveryType = "tracked" | "home_delivery";
+export type SaleChannel = "online" | "pos";
+export type PaymentMethod = "cash" | "sumup_solo" | "bank_transfer";
+export type PaymentStatus = "pending" | "paid" | "failed";
 
 export type Order = {
   id: string;
@@ -18,6 +21,12 @@ export type Order = {
   subtotal: number | null;
   total_items: number;
   email_status: "pending" | "sent" | "failed";
+  sale_channel: SaleChannel;
+  payment_method: PaymentMethod | null;
+  payment_status: PaymentStatus;
+  payment_provider: string | null;
+  payment_reference: string | null;
+  paid_at: string | null;
   tracking_number: string | null;
   shipping_company: string | null;
   tracking_url: string | null;
@@ -28,6 +37,7 @@ export type Order = {
   invoice_sent_at: string | null;
   discount_amount: number | null;
   discount_type: "percentage" | "absolute" | null;
+  market_id: string | null;
   created_at: string;
   updated_at: string;
 };
