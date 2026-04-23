@@ -24,7 +24,7 @@ type BasketProduct = PosCatalogItem & {
   lineTotal: number;
 };
 
-type MobileTab = "sale" | "history";
+type PosTab = "catalogue" | "checkout" | "history";
 
 function formatCurrency(value: number | null | undefined) {
   return typeof value === "number" ? `£${value.toFixed(2)}` : "—";
@@ -44,7 +44,7 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [pollCount, setPollCount] = useState(0);
   const [isPending, startAction] = useTransition();
-  const [activeTab, setActiveTab] = useState<MobileTab>("sale");
+  const [activeTab, setActiveTab] = useState<PosTab>("catalogue");
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.product_id, product])), [products]);
 
@@ -525,17 +525,28 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
       {/* ---------------------------------------------------------------- */}
       {/* Mobile tab bar — Sale | History (hidden on lg+)                   */}
       {/* ---------------------------------------------------------------- */}
-      <div className="sticky top-0 z-10 -mx-4 flex border-b border-warm-200 bg-white px-4 shadow-sm lg:hidden sm:-mx-6 sm:px-6">
+      <div className="sticky top-0 z-10 -mx-4 flex border-b border-warm-200 bg-white px-4 shadow-sm sm:-mx-6 sm:px-6">
         <button
           type="button"
-          onClick={() => setActiveTab("sale")}
+          onClick={() => setActiveTab("catalogue")}
           className={`flex-1 py-3 text-sm font-semibold transition ${
-            activeTab === "sale"
+            activeTab === "catalogue"
               ? "border-b-2 border-warm-900 text-warm-900"
               : "text-warm-500 hover:text-warm-700"
           }`}
         >
-          Sale
+          Catalogue
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("checkout")}
+          className={`flex-1 py-3 text-sm font-semibold transition ${
+            activeTab === "checkout"
+              ? "border-b-2 border-warm-900 text-warm-900"
+              : "text-warm-500 hover:text-warm-700"
+          }`}
+        >
+          Checkout
           {basketQuantity > 0 && (
             <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brass-600 px-1.5 text-xs font-bold text-white">
               {basketQuantity}
@@ -558,15 +569,18 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
       {/* ---------------------------------------------------------------- */}
       {/* Sale tab — catalogue + checkout (always visible on lg+)           */}
       {/* ---------------------------------------------------------------- */}
-      <section className={`grid gap-4 sm:gap-6 lg:grid-cols-[1.4fr_0.9fr] ${activeTab !== "sale" ? "hidden lg:grid" : ""}`}>
-        <div>{catalogueSection}</div>
-        <div>{checkoutSection}</div>
+      <section className={activeTab !== "catalogue" ? "hidden" : ""}>
+        {catalogueSection}
+      </section>
+
+      <section className={activeTab !== "checkout" ? "hidden" : ""}>
+        {checkoutSection}
       </section>
 
       {/* ---------------------------------------------------------------- */}
       {/* History tab — recent sales (always visible on lg+)               */}
       {/* ---------------------------------------------------------------- */}
-      <section className={`rounded-2xl border border-warm-200 bg-white shadow-sm ${activeTab !== "history" ? "hidden lg:block" : ""}`}>
+      <section className={`rounded-2xl border border-warm-200 bg-white shadow-sm ${activeTab !== "history" ? "hidden" : ""}`}>
         <div className="flex flex-col gap-3 border-b border-warm-100 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brass-600">History</p>
