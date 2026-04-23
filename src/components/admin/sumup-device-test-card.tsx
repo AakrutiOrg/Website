@@ -74,10 +74,14 @@ export function SumUpDeviceTestCard({ isConfigured }: Props) {
             {result.message}
           </div>
 
-          <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <dl className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             <div className="rounded-2xl border border-warm-100 bg-warm-50 px-4 py-4">
               <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-warm-500">Device Status</dt>
-              <dd className="mt-2 text-sm font-semibold text-warm-900">{result.deviceStatus ?? "UNKNOWN"}</dd>
+              <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-warm-900">
+                {result.deviceStatus === "ONLINE" && <span className="h-2.5 w-2.5 rounded-full bg-green-500" />}
+                {result.deviceStatus === "OFFLINE" && <span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+                {result.deviceStatus ?? "UNKNOWN"}
+              </dd>
             </div>
             <div className="rounded-2xl border border-warm-100 bg-warm-50 px-4 py-4">
               <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-warm-500">Reader State</dt>
@@ -90,6 +94,12 @@ export function SumUpDeviceTestCard({ isConfigured }: Props) {
             <div className="rounded-2xl border border-warm-100 bg-warm-50 px-4 py-4">
               <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-warm-500">Last Activity</dt>
               <dd className="mt-2 text-sm font-semibold text-warm-900">{formatDateTime(result.lastActivity)}</dd>
+            </div>
+            <div className="rounded-2xl border border-warm-100 bg-warm-50 px-4 py-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-warm-500">Battery</dt>
+              <dd className="mt-2 text-sm font-semibold text-warm-900">
+                {result.batteryLevel != null ? `${Math.round(result.batteryLevel)}%` : "—"}
+              </dd>
             </div>
           </dl>
 

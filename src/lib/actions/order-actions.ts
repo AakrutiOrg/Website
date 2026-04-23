@@ -68,8 +68,8 @@ function buildFulfillmentEmailHtml(args: {
         <tr>
           <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
             <img src="cid:aakruti-logo" alt="Aakruti" width="120" style="display:block;margin:0 auto 16px auto;height:auto;" />
-            <p style="margin:0;font-size:14px;color:#e8f5e8;">Order Reference</p>
-            <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">${orderId}</p>
+            <p style="margin:0;font-size:14px;color:#e8f5e8;">Order Fulfillment</p>
+            <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">Order Number: ${orderId}</p>
           </td>
         </tr>
         <tr><td style="padding:32px 24px;">
@@ -124,8 +124,8 @@ function buildCancellationEmailHtml(args: {
         <tr>
           <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
             <img src="cid:aakruti-logo" alt="Aakruti" width="120" style="display:block;margin:0 auto 16px auto;height:auto;" />
-            <p style="margin:0;font-size:14px;color:#e8f5e8;">Order Reference</p>
-            <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">${orderId}</p>
+            <p style="margin:0;font-size:14px;color:#e8f5e8;">Order Cancellation</p>
+            <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">Order Number: ${orderId}</p>
           </td>
         </tr>
         <tr><td style="padding:32px 24px;">
@@ -229,8 +229,8 @@ function buildInvoiceEmailHtml(args: {
           <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
             <img src="cid:aakruti-logo" alt="Aakruti" width="150" style="display:block;margin:0 auto 16px auto;width:150px;max-width:100%;height:auto;" />
             <p style="margin:0;font-size:14px;line-height:22px;color:#e8f5e8;font-family:'Great Vibes',cursive;">Shaping your Abode</p>
-            <p style="margin:16px 0 0 0;font-size:14px;line-height:22px;color:#e8f5e8;">Order Reference</p>
-            <p style="margin:8px 0 0 0;font-size:24px;line-height:30px;font-weight:700;color:#ffffff;">${orderId}</p>
+            <p style="margin:16px 0 0 0;font-size:14px;line-height:22px;color:#e8f5e8;">Invoice</p>
+            <p style="margin:8px 0 0 0;font-size:24px;line-height:30px;font-weight:700;color:#ffffff;">Order Number: ${orderId}</p>
             <p style="margin:6px 0 0 0;font-size:12px;color:#e8f5e8;">${orderDate}</p>
           </td>
         </tr>
@@ -683,4 +683,96 @@ export async function cancelOrder(orderDbId: string, reason: string) {
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${order.order_id}`);
+}
+
+export async function deleteOrder(orderDbId: string, restoreStock: boolean = false) {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderDbId)
+    .single<Order>();
+
+  if (orderError || !order) {
+    throw new Error("Order not found.");
+  }
+
+  if (restoreStock && order.market_id) {
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_db_id", orderDbId)
+      .returns<OrderItem[]>();
+
+    if (items?.length) {
+      try {
+        const productQuantities = new Map<string, number>();
+        for (const item of items) {
+          if (item.product_id) {
+            productQuantities.set(item.product_id, (productQuantities.get(item.product_id) ?? 0) + item.quantity);
+          }
+        }
+
+        const productIds = [...productQuantities.keys()];
+        if (productIds.length > 0) {
+          const { data: marketDataRows } = await supabase
+            .from("product_market_data")
+            .select("id, product_id, stock_quantity")
+            .eq("market_id", order.market_id)
+            .in("product_id", productIds);
+
+          const inventoryEvents: any[] = [];
+          for (const row of marketDataRows ?? []) {
+            const qty = productQuantities.get(row.product_id);
+            if (!qty) continue;
+
+            await supabase
+              .from("product_market_data")
+              .update({ stock_quantity: row.stock_quantity + qty })
+              .eq("id", row.id);
+
+            inventoryEvents.push({
+              source: "system",
+              product_id: row.product_id,
+              product_market_data_id: row.id,
+              market_id: order.market_id,
+              quantity_delta: qty,
+              change_type: "order_deleted",
+              raw_payload: { order_db_id: orderDbId, order_ref: order.order_id },
+              processed_at: new Date().toISOString(),
+            });
+          }
+
+          if (inventoryEvents.length > 0) {
+            await supabase.from("inventory_events").insert(inventoryEvents);
+          }
+        }
+      } catch {
+        // Stock restore failure should not block the deletion
+      }
+    }
+  }
+
+  const { error: itemsDeleteError } = await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_db_id", orderDbId);
+
+  if (itemsDeleteError) {
+    throw new Error(`Failed to delete order items: ${itemsDeleteError.message}`);
+  }
+
+  const { error: deleteError } = await supabase
+    .from("orders")
+    .delete()
+    .eq("id", orderDbId);
+
+  if (deleteError) {
+    throw new Error(`Failed to delete order: ${deleteError.message}`);
+  }
+
+  revalidatePath("/admin/orders");
 }

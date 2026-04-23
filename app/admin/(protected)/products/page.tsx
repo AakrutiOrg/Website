@@ -1,20 +1,30 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminProductsPage() {
   const supabase = await createClient();
 
-  const [{ data: products }, { count: preciousCount }] = await Promise.all([
+  const [{ data: productsRaw }, { count: preciousCount }] = await Promise.all([
     supabase
       .from("products")
       .select(`
         *,
-        categories:category_id (name)
+        categories:category_id (name),
+        product_images(storage_path, is_primary, sort_order)
       `)
       .order("created_at", { ascending: false }),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("is_featured", true),
   ]);
+
+  const products = productsRaw?.map((product) => {
+    const images = product.product_images as any[];
+    const primaryImage = images?.find((img) => img.is_primary) || images?.[0];
+    const image_url = primaryImage
+      ? supabase.storage.from("product-images").getPublicUrl(primaryImage.storage_path).data.publicUrl
+      : null;
+    return { ...product, image_url };
+  });
 
   return (
     <div className="space-y-6">
@@ -49,10 +59,16 @@ export default async function AdminProductsPage() {
                     <img
                       src={product.image_url}
                       alt={product.name}
-                      className="h-12 w-12 rounded-lg bg-warm-100 object-cover"
+                      className="h-12 w-12 rounded-lg border border-warm-200 bg-warm-100 object-cover"
                     />
                   ) : (
-                    <div className="h-12 w-12 rounded-lg bg-warm-100" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-warm-200 bg-warm-50 text-warm-400">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
                   )}
                   <div>
                     <div className="flex items-center gap-2">
@@ -66,7 +82,7 @@ export default async function AdminProductsPage() {
                     <div className="mt-1 flex items-center gap-3 text-sm text-warm-500">
                       <span>{product.base_price != null ? `£${product.base_price.toFixed(2)}` : "No Base Price"}</span>
                       <span>&bull;</span>
-                      <span>{product.categories?.name || "Uncategorized"}</span>
+                      <span>{(product.categories as any)?.name || "Uncategorized"}</span>
                       {!product.is_active && (
                         <>
                           <span>&bull;</span>

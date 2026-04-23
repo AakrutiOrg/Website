@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Order, OrderItem } from "@/types";
 import { OrderActionButtons } from "./_components/order-action-buttons";
+import { DeleteOrderButton } from "./_components/delete-order-button";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-amber-100 text-amber-800" },
@@ -437,6 +438,10 @@ export default async function OrderDetailPage({ params }: Props) {
             </dl>
           </section>
         </div>
+      </div>
+
+      <div className="mt-8 flex justify-end">
+        <DeleteOrderButton orderDbId={order.id} />
       </div>
     </div>
   );

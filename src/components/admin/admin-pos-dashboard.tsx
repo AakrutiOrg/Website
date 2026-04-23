@@ -37,7 +37,7 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>("sumup_solo");
   const [discountType, setDiscountType] = useState<PosDiscountType | "none">("none");
   const [discountValue, setDiscountValue] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
@@ -159,7 +159,7 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
     setCustomerName("");
     setCustomerEmail("");
     setCustomerPhone("");
-    setPaymentMethod("cash");
+    setPaymentMethod("sumup_solo");
     setDiscountType("none");
     setDiscountValue("");
   }
@@ -448,39 +448,42 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
 
           <div className="space-y-3">
             <span className="text-sm font-medium text-warm-800">Payment Method</span>
-            <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-4 transition ${paymentMethod === "cash" ? "border-brass-400 bg-brass-50" : "border-warm-200 bg-white"}`}>
-              <input
-                type="radio"
-                name="payment_method"
-                checked={paymentMethod === "cash"}
-                onChange={() => setPaymentMethod("cash")}
-                className="mt-1"
-              />
-              <div>
-                <p className="font-medium text-warm-900">Cash</p>
-                <p className="mt-1 text-sm text-warm-500">Marks the sale as paid immediately and sends the receipt email right away.</p>
-              </div>
-            </label>
-            <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-4 transition ${paymentMethod === "sumup_solo" ? "border-brass-400 bg-brass-50" : "border-warm-200 bg-white"}`}>
-              <input
-                type="radio"
-                name="payment_method"
-                checked={paymentMethod === "sumup_solo"}
-                onChange={() => setPaymentMethod("sumup_solo")}
-                className="mt-1"
-              />
-              <div>
-                <p className="font-medium text-warm-900">Card via SumUp Solo</p>
-                <p className="mt-1 text-sm text-warm-500">
-                  Sends the amount to the Solo terminal, waits for approval, then confirms payment and emails the receipt.
-                </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("cash")}
+                className={`flex flex-col items-center justify-center gap-3 rounded-2xl border py-6 transition ${
+                  paymentMethod === "cash"
+                    ? "border-brass-500 bg-brass-50 ring-1 ring-brass-500"
+                    : "border-warm-200 bg-white hover:border-warm-300 hover:bg-warm-50"
+                }`}
+              >
+                <div className={paymentMethod === "cash" ? "text-brass-700" : "text-warm-500"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                </div>
+                <p className="font-semibold text-warm-900">Cash</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("sumup_solo")}
+                className={`relative flex flex-col items-center justify-center gap-3 rounded-2xl border py-6 transition ${
+                  paymentMethod === "sumup_solo"
+                    ? "border-brass-500 bg-brass-50 ring-1 ring-brass-500"
+                    : "border-warm-200 bg-white hover:border-warm-300 hover:bg-warm-50"
+                }`}
+              >
+                <div className={paymentMethod === "sumup_solo" ? "text-brass-700" : "text-warm-500"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                </div>
+                <p className="font-semibold text-warm-900">Card</p>
                 {!sumUpConfigured && (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
-                    SumUp config missing
-                  </p>
+                  <span className="absolute right-3 top-3 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-600">
+                    No Config
+                  </span>
                 )}
-              </div>
-            </label>
+              </button>
+            </div>
           </div>
 
           {feedback && (

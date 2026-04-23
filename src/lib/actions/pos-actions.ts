@@ -34,6 +34,8 @@ type SumUpReaderStatusResponse = {
     state?: string;
     firmware_version?: string;
     last_activity?: string;
+    battery_level?: number;
+    connection_type?: string;
   };
 };
 
@@ -200,7 +202,7 @@ function buildPosReceiptEmailHtml(args: {
   paymentMethod: string;
   subtotal: number;
   paidAt: string;
-  items: OrderItem[];
+  items: (OrderItem & { imageUrl?: string | null })[];
 }) {
   const itemRows = args.items
     .map((item) => {
@@ -215,12 +217,17 @@ function buildPosReceiptEmailHtml(args: {
       const lineTotal =
         item.unit_price_snapshot != null ? `£${(item.unit_price_snapshot * item.quantity).toFixed(2)}` : "—";
 
+      const imgCell = item.imageUrl
+        ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.product_name_snapshot)}" width="48" height="48" style="width:48px;height:48px;object-fit:cover;border-radius:4px;display:block;" />`
+        : `<div style="width:48px;height:48px;background:#e8f5e8;border-radius:4px;display:flex;align-items:center;justify-content:center;"></div>`;
+
       return `<tr>
-        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;line-height:22px;color:#145018;">${escapeHtml(item.product_name_snapshot)}</td>
-        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:13px;line-height:20px;color:#2e7d32;">${variant || "In-store purchase"}</td>
-        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;color:#145018;text-align:center;">${item.quantity}</td>
-        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;color:#145018;text-align:right;">${unitPrice}</td>
-        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;font-weight:700;color:#145018;text-align:right;">${lineTotal}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;vertical-align:middle;width:48px;">${imgCell}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;line-height:22px;color:#145018;vertical-align:middle;">${escapeHtml(item.product_name_snapshot)}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:13px;line-height:20px;color:#2e7d32;vertical-align:middle;">${variant || "In-store purchase"}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;color:#145018;text-align:center;vertical-align:middle;">${item.quantity}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;color:#145018;text-align:right;vertical-align:middle;">${unitPrice}</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;font-weight:700;color:#145018;text-align:right;vertical-align:middle;">${lineTotal}</td>
       </tr>`;
     })
     .join("");
@@ -236,7 +243,7 @@ function buildPosReceiptEmailHtml(args: {
               <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
                 <img src="cid:aakruti-logo" alt="Aakruti" width="150" style="display:block;margin:0 auto 16px auto;width:150px;max-width:100%;height:auto;" />
                 <p style="margin:0;font-size:14px;color:#e8f5e8;">POS Receipt</p>
-                <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">${escapeHtml(args.orderId)}</p>
+                <p style="margin:8px 0 0 0;font-size:24px;font-weight:700;color:#ffffff;">Order Number: ${escapeHtml(args.orderId)}</p>
               </td>
             </tr>
             <tr>
@@ -259,6 +266,7 @@ function buildPosReceiptEmailHtml(args: {
                 </table>
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e8f5e8;">
                   <tr>
+                    <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;width:56px;"></td>
                     <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;">Item</td>
                     <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;">Details</td>
                     <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;text-align:center;">Qty</td>
@@ -282,6 +290,33 @@ async function sendReceiptEmail(order: Order, items: OrderItem[]) {
     return;
   }
 
+  const supabase = createAdminClient();
+  const productIds = items.map((i) => i.product_id).filter(Boolean) as string[];
+  const imageMap = new Map<string, string | null>();
+
+  if (productIds.length > 0) {
+    const { data: products } = await supabase
+      .from("product_catalog_market_view")
+      .select("product_id, primary_image_url")
+      .in("product_id", productIds);
+
+    for (const p of products ?? []) {
+      if (p.primary_image_url) {
+        const { data: { publicUrl } } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(p.primary_image_url);
+        imageMap.set(p.product_id, publicUrl);
+      } else {
+        imageMap.set(p.product_id, null);
+      }
+    }
+  }
+
+  const itemsWithImages = items.map((item) => ({
+    ...item,
+    imageUrl: item.product_id ? (imageMap.get(item.product_id) ?? null) : null,
+  }));
+
   const resendEnv = getResendEnv();
   const logoAttachment = await getInlineLogoAttachment();
   const paidAtLabel = new Date(order.paid_at ?? order.updated_at).toLocaleString("en-GB", {
@@ -300,7 +335,7 @@ async function sendReceiptEmail(order: Order, items: OrderItem[]) {
     paymentMethod: paymentMethodLabel,
     subtotal: order.subtotal ?? 0,
     paidAt: paidAtLabel,
-    items,
+    items: itemsWithImages,
   });
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -363,7 +398,7 @@ async function finalizePosOrderPayment(orderDbId: string) {
     .from("orders")
     .update({
       payment_status: "paid",
-      status: "closed",
+      status: "fulfilled",
       paid_at: paidAt,
     })
     .eq("id", orderDbId)
@@ -535,6 +570,8 @@ export async function testSumUpSoloConnection(): Promise<PosDeviceTestResult> {
     const state = data.data?.state ?? null;
     const firmwareVersion = data.data?.firmware_version ?? null;
     const lastActivity = data.data?.last_activity ?? null;
+    const batteryLevel = data.data?.battery_level ?? null;
+    const connectionType = data.data?.connection_type ?? null;
 
     return {
       ok: true,
@@ -546,6 +583,8 @@ export async function testSumUpSoloConnection(): Promise<PosDeviceTestResult> {
       readerState: state,
       firmwareVersion,
       lastActivity,
+      batteryLevel,
+      connectionType,
       testedAt,
     };
   } catch (error) {
@@ -557,6 +596,8 @@ export async function testSumUpSoloConnection(): Promise<PosDeviceTestResult> {
       readerState: null,
       firmwareVersion: null,
       lastActivity: null,
+      batteryLevel: null,
+      connectionType: null,
     };
   }
 }
@@ -637,8 +678,8 @@ export async function createPosSale(input: PosSaleInput): Promise<PosSaleResult>
     }
   }
 
-  const initialStatus = input.paymentMethod === "cash" ? "closed" : "pending";
-  const initialPaymentStatus = input.paymentMethod === "cash" ? "paid" : "pending";
+  const initialStatus = "pending";
+  const initialPaymentStatus = "pending";
 
   const { data: order, error: orderError } = await supabase
     .from("orders")

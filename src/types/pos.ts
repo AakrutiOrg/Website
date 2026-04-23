@@ -37,6 +37,8 @@ export type PosDeviceTestResult = {
   readerState?: string | null;
   firmwareVersion?: string | null;
   lastActivity?: string | null;
+  batteryLevel?: number | null;
+  connectionType?: string | null;
   testedAt: string;
 };
 
