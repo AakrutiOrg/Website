@@ -1,11 +1,20 @@
 import Link from "next/link";
 
+import { DeleteProductButton } from "@/components/admin/delete-product-button";
 import { createClient } from "@/lib/supabase/server";
+import type { Product } from "@/types";
+
+type ProductListRow = Product & {
+  categories: { name: string } | null;
+  product_images: { storage_path: string; is_primary: boolean; sort_order: number }[];
+  image_url: string | null;
+  hasSales: boolean;
+};
 
 export default async function AdminProductsPage() {
   const supabase = await createClient();
 
-  const [{ data: productsRaw }, { count: preciousCount }] = await Promise.all([
+  const [{ data: productsRaw }, { count: preciousCount }, { data: soldItemsRaw }] = await Promise.all([
     supabase
       .from("products")
       .select(`
@@ -15,15 +24,28 @@ export default async function AdminProductsPage() {
       `)
       .order("created_at", { ascending: false }),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("is_featured", true),
+    supabase.from("order_items").select("product_id").not("product_id", "is", null),
   ]);
 
-  const products = productsRaw?.map((product) => {
-    const images = product.product_images as any[];
+  const soldProductIds = new Set(
+    (soldItemsRaw ?? [])
+      .map((item) => item.product_id)
+      .filter((productId): productId is string => typeof productId === "string" && productId.length > 0),
+  );
+
+  const products: ProductListRow[] | undefined = productsRaw?.map((product) => {
+    const images = product.product_images as ProductListRow["product_images"];
     const primaryImage = images?.find((img) => img.is_primary) || images?.[0];
     const image_url = primaryImage
       ? supabase.storage.from("product-images").getPublicUrl(primaryImage.storage_path).data.publicUrl
       : null;
-    return { ...product, image_url };
+    return {
+      ...(product as Product),
+      categories: (product.categories as ProductListRow["categories"]) ?? null,
+      product_images: images ?? [],
+      image_url,
+      hasSales: soldProductIds.has(product.id),
+    };
   });
 
   return (
@@ -49,7 +71,7 @@ export default async function AdminProductsPage() {
         <ul className="divide-y divide-warm-100">
           {(products || []).length === 0 ? (
             <li className="p-6 text-center text-sm text-warm-500">
-              No products found. Click "Add Product" to create one.
+              No products found. Click &quot;Add Product&quot; to create one.
             </li>
           ) : (
             products?.map((product) => (
@@ -82,7 +104,7 @@ export default async function AdminProductsPage() {
                     <div className="mt-1 flex items-center gap-3 text-sm text-warm-500">
                       <span>{product.base_price != null ? `£${product.base_price.toFixed(2)}` : "No Base Price"}</span>
                       <span>&bull;</span>
-                      <span>{(product.categories as any)?.name || "Uncategorized"}</span>
+                      <span>{product.categories?.name || "Uncategorized"}</span>
                       {!product.is_active && (
                         <>
                           <span>&bull;</span>
@@ -92,12 +114,19 @@ export default async function AdminProductsPage() {
                     </div>
                   </div>
                 </div>
-                <Link
-                  href={`/admin/products/${product.id}/edit`}
-                  className="rounded-lg border border-warm-200 px-3 py-1.5 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
-                >
-                  Edit
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/products/${product.id}/edit`}
+                    className="rounded-lg border border-warm-200 px-3 py-1.5 text-sm font-medium text-warm-700 transition hover:border-brass-400 hover:text-brass-700"
+                  >
+                    Edit
+                  </Link>
+                  <DeleteProductButton
+                    productId={product.id}
+                    productName={product.name}
+                    hasSales={product.hasSales}
+                  />
+                </div>
               </li>
             ))
           )}

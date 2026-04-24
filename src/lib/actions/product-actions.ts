@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { uploadOptimizedImage } from "@/lib/images/upload-optimized-image";
 import { createClient } from "@/lib/supabase/server";
 import { getMarkets } from "@/services/markets/get-markets";
 import type { ProductAttributes } from "@/types";
@@ -108,6 +109,37 @@ async function ensureFeaturedLimit(supabase: Awaited<ReturnType<typeof createCli
   }
 }
 
+function getUploadedImageFiles(formData: FormData) {
+  return formData
+    .getAll("images")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+}
+
+async function getProductStoragePaths(productId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: productImages } = await supabase
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", productId);
+
+  return (productImages ?? [])
+    .map((image) => image.storage_path)
+    .filter((path): path is string => typeof path === "string" && path.length > 0);
+}
+
+async function removeProductStorageFiles(storagePaths: string[], supabase: Awaited<ReturnType<typeof createClient>>) {
+  if (storagePaths.length === 0) {
+    return;
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from("product-images")
+    .remove(storagePaths);
+
+  if (storageError) {
+    console.error("Failed to delete product images from storage:", storageError);
+  }
+}
+
 export async function createProduct(formData: FormData) {
   await requireAdmin();
 
@@ -127,6 +159,7 @@ export async function createProduct(formData: FormData) {
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
   const attributes = buildProductAttributes(formData);
+  const imageFiles = getUploadedImageFiles(formData);
 
   await ensureFeaturedLimit(supabase, is_featured);
 
@@ -149,26 +182,26 @@ export async function createProduct(formData: FormData) {
     throw new Error(`Failed to create product globally: ${error?.message}`);
   }
 
-  // Handle uploaded images
-  const newImagesStr = formData.get("new_images") as string;
-  if (newImagesStr) {
-    try {
-      const paths = JSON.parse(newImagesStr) as string[];
-      for (const [index, path] of paths.entries()) {
-        await supabase.from("product_images").insert({
-          product_id: product.id,
-          storage_path: path,
-          is_primary: index === 0, // Make the first image primary by default
-        });
-        
-        // If it's the primary image, sync the public URL to products.image_url
-        if (index === 0) {
-          const publicUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-          await supabase.from("products").update({ image_url: publicUrl }).eq("id", product.id);
-        }
+  if (imageFiles.length > 0) {
+    for (const [index, file] of imageFiles.entries()) {
+      const { storagePath, publicUrl } = await uploadOptimizedImage({
+        bucket: "product-images",
+        folder: product.id,
+        file,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        quality: 82,
+      });
+
+      await supabase.from("product_images").insert({
+        product_id: product.id,
+        storage_path: storagePath,
+        is_primary: index === 0,
+      });
+
+      if (index === 0) {
+        await supabase.from("products").update({ image_url: publicUrl }).eq("id", product.id);
       }
-    } catch(e) {
-      console.error("Failed to parse and insert images:", e);
     }
   }
 
@@ -197,6 +230,7 @@ export async function updateProduct(id: string, formData: FormData) {
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
   const attributes = buildProductAttributes(formData);
+  const imageFiles = getUploadedImageFiles(formData);
 
   await ensureFeaturedLimit(supabase, is_featured, id);
 
@@ -221,35 +255,35 @@ export async function updateProduct(id: string, formData: FormData) {
     throw new Error(`Failed to update global product structure: ${error.message}`);
   }
 
-  // Handle appended uploaded images
-  const newImagesStr = formData.get("new_images") as string;
-  if (newImagesStr) {
-    try {
-      const paths = JSON.parse(newImagesStr) as string[];
-      // Check if product already has a primary image
-      const { data: existingImages } = await supabase
-         .from("product_images")
-         .select("id")
-         .eq("product_id", id)
-         .eq("is_primary", true);
-         
-      const needsPrimary = !existingImages || existingImages.length === 0;
+  if (imageFiles.length > 0) {
+    const { data: existingImages } = await supabase
+      .from("product_images")
+      .select("id")
+      .eq("product_id", id)
+      .eq("is_primary", true);
 
-      for (const [index, path] of paths.entries()) {
-        const isFirstUploadHere = needsPrimary && index === 0;
-        await supabase.from("product_images").insert({
-          product_id: id,
-          storage_path: path,
-          is_primary: isFirstUploadHere, 
-        });
-        
-        if (isFirstUploadHere) {
-          const publicUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-          await supabase.from("products").update({ image_url: publicUrl }).eq("id", id);
-        }
+    const needsPrimary = !existingImages || existingImages.length === 0;
+
+    for (const [index, file] of imageFiles.entries()) {
+      const { storagePath, publicUrl } = await uploadOptimizedImage({
+        bucket: "product-images",
+        folder: id,
+        file,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        quality: 82,
+      });
+
+      const isFirstUploadHere = needsPrimary && index === 0;
+      await supabase.from("product_images").insert({
+        product_id: id,
+        storage_path: storagePath,
+        is_primary: isFirstUploadHere,
+      });
+
+      if (isFirstUploadHere) {
+        await supabase.from("products").update({ image_url: publicUrl }).eq("id", id);
       }
-    } catch(e) {
-      console.error("Failed to parse and insert images:", e);
     }
   }
 
@@ -265,6 +299,49 @@ export async function deleteProduct(id: string) {
   await requireAdmin();
 
   const supabase = await createClient();
+  const { count: soldCount, error: soldCheckError } = await supabase
+    .from("order_items")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", id);
+
+  if (soldCheckError) {
+    throw new Error(`Failed to check product sales history: ${soldCheckError.message}`);
+  }
+
+  if ((soldCount ?? 0) > 0) {
+    const { error: productError } = await supabase
+      .from("products")
+      .update({
+        is_active: false,
+        is_featured: false,
+      })
+      .eq("id", id);
+
+    if (productError) {
+      throw new Error(`Failed to archive product: ${productError.message}`);
+    }
+
+    const { error: marketError } = await supabase
+      .from("product_market_data")
+      .update({
+        is_active: false,
+        stock_quantity: 0,
+      })
+      .eq("product_id", id);
+
+    if (marketError) {
+      throw new Error(`Failed to archive product market data: ${marketError.message}`);
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/${id}/edit`);
+    return {
+      mode: "soft" as const,
+      message: "This product has past sales, so it was archived instead of permanently deleted.",
+    };
+  }
+
+  const storagePaths = await getProductStoragePaths(id, supabase);
 
   const { error } = await supabase.from("products").delete().eq("id", id);
 
@@ -272,6 +349,12 @@ export async function deleteProduct(id: string) {
     throw new Error(`Failed to delete product: ${error.message}`);
   }
 
+  await removeProductStorageFiles(storagePaths, supabase);
+
   revalidatePath("/admin/products");
+  return {
+    mode: "hard" as const,
+    message: "Product permanently deleted.",
+  };
 }
 

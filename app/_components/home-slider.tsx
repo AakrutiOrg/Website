@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useCart } from "@/components/providers/cart-provider";
 import { formatCurrency } from "@/lib/utils";
@@ -28,23 +28,55 @@ interface HomeSliderProps {
 }
 
 export function HomeSlider({ categories, treasures }: HomeSliderProps) {
-  const [page, setPage] = useState<"hero" | "collections">("hero");
-  const [treasureIndex, setTreasureIndex] = useState(0);
-  const [cartMessage, setCartMessage] = useState("");
   const searchParams = useSearchParams();
+  const initialPage = searchParams.get("view") === "collections" ? "collections" : "hero";
+  const [page, setPage] = useState<"hero" | "collections">(initialPage);
+  const [treasureIndex, setTreasureIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
+  const [cartMessage, setCartMessage] = useState("");
+  const marqueeViewportRef = useRef<HTMLDivElement | null>(null);
+  const marqueeTrackRef = useRef<HTMLDivElement | null>(null);
+  const marqueeItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const marqueeOffsetRef = useRef(0);
+  const marqueePauseUntilRef = useRef(0);
+  const marqueeSnapRef = useRef<{ from: number; to: number; start: number; duration: number } | null>(null);
   const { addItem } = useCart();
 
-  useEffect(() => {
-    const requestedView = searchParams.get("view");
-    setPage(requestedView === "collections" ? "collections" : "hero");
-  }, [searchParams]);
+  const normalizeMarqueeOffset = (offset: number, singleWidth: number) => {
+    if (singleWidth <= 0) {
+      return offset;
+    }
+
+    let normalizedOffset = offset;
+
+    while (normalizedOffset <= -singleWidth) {
+      normalizedOffset += singleWidth;
+    }
+
+    while (normalizedOffset > 0) {
+      normalizedOffset -= singleWidth;
+    }
+
+    return normalizedOffset;
+  };
+
+  const applyMarqueeOffset = (offset: number) => {
+    if (marqueeTrackRef.current) {
+      marqueeTrackRef.current.style.transform = `translate3d(${offset}px, 0, 0)`;
+    }
+  };
 
   useEffect(() => {
     if (treasures.length <= 1) {
+      marqueeOffsetRef.current = 0;
+      marqueeSnapRef.current = null;
+      marqueePauseUntilRef.current = 0;
+      applyMarqueeOffset(0);
       return;
     }
 
     const interval = window.setInterval(() => {
+      setSlideDirection(1);
       setTreasureIndex((current) => (current + 1) % treasures.length);
     }, 4500);
 
@@ -52,18 +84,105 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
   }, [treasures]);
 
   useEffect(() => {
-    if (treasureIndex >= treasures.length) {
-      setTreasureIndex(0);
+    if (treasures.length <= 1) {
+      return;
     }
-  }, [treasureIndex, treasures.length]);
 
-  const activeTreasure = treasures[treasureIndex] ?? null;
+    let animationFrameId = 0;
+    let previousTimestamp = 0;
+
+    const tick = (timestamp: number) => {
+      const track = marqueeTrackRef.current;
+      if (!track) {
+        animationFrameId = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      const singleWidth = track.scrollWidth / 2;
+      let nextOffset = marqueeOffsetRef.current;
+
+      if (marqueeSnapRef.current) {
+        const { from, to, start, duration } = marqueeSnapRef.current;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        nextOffset = from + (to - from) * easedProgress;
+
+        if (progress >= 1) {
+          marqueeSnapRef.current = null;
+        }
+      } else if (timestamp >= marqueePauseUntilRef.current) {
+        if (previousTimestamp === 0) {
+          previousTimestamp = timestamp;
+        }
+
+        const delta = timestamp - previousTimestamp;
+        nextOffset -= (delta / 1000) * 68;
+      }
+
+      nextOffset = normalizeMarqueeOffset(nextOffset, singleWidth);
+      marqueeOffsetRef.current = nextOffset;
+      applyMarqueeOffset(nextOffset);
+      previousTimestamp = timestamp;
+      animationFrameId = window.requestAnimationFrame(tick);
+    };
+
+    animationFrameId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [treasures.length]);
+  const safeTreasureIndex = treasures.length > 0 ? treasureIndex % treasures.length : 0;
+  const activeTreasure = treasures[safeTreasureIndex] ?? null;
+  const marqueeTreasures = treasures.length > 0 ? [...treasures, ...treasures] : [];
+
+  useEffect(() => {
+    if (treasures.length <= 1) {
+      return;
+    }
+
+    const viewport = marqueeViewportRef.current;
+    const track = marqueeTrackRef.current;
+    const activeButton = marqueeItemRefs.current[safeTreasureIndex];
+
+    if (!viewport || !track || !activeButton) {
+      return;
+    }
+
+    const singleWidth = track.scrollWidth / 2;
+    const targetCenter = activeButton.offsetLeft + activeButton.offsetWidth / 2 + singleWidth;
+    const targetOffset = normalizeMarqueeOffset((viewport.clientWidth / 2) - targetCenter, singleWidth);
+    const now = performance.now();
+
+    marqueeSnapRef.current = {
+      from: marqueeOffsetRef.current,
+      to: targetOffset,
+      start: now,
+      duration: 720,
+    };
+    marqueePauseUntilRef.current = now + 1220;
+  }, [safeTreasureIndex, treasures.length]);
+
+  const goToTreasure = (nextIndex: number) => {
+    if (treasures.length === 0) {
+      return;
+    }
+
+    if (nextIndex === safeTreasureIndex) {
+      return;
+    }
+
+    setSlideDirection(nextIndex > safeTreasureIndex ? 1 : -1);
+    setTreasureIndex(nextIndex);
+  };
 
   const showPreviousTreasure = () => {
+    setSlideDirection(-1);
     setTreasureIndex((current) => (current - 1 + treasures.length) % treasures.length);
   };
 
   const showNextTreasure = () => {
+    setSlideDirection(1);
     setTreasureIndex((current) => (current + 1) % treasures.length);
   };
 
@@ -152,114 +271,186 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
           </section>
 
           {activeTreasure && (
-            <section className="bg-warm-50 py-14 sm:py-18">
-              <div className="mx-auto grid max-w-6xl gap-8 px-6 sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12">
-                <div className="relative overflow-hidden border border-warm-200 bg-white shadow-sm">
-                  <div className="relative h-[320px] bg-warm-100 sm:h-[420px]">
-                    {activeTreasure.primary_image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={activeTreasure.primary_image_url}
-                        alt={activeTreasure.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="bg-craft-texture h-full w-full" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-warm-900/35 via-transparent to-transparent" />
-                    <div className="absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-brass-400" />
-                    <div className="absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-brass-400" />
-                    <div className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-brass-400" />
-                    <div className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-brass-400" />
-                  </div>
-                </div>
-
-                <div className="max-w-xl">
-                  <div className="flex items-center justify-between gap-4">
+            <section className="relative overflow-hidden bg-[linear-gradient(180deg,#faf5ef_0%,#fffaf4_55%,#f4eadb_100%)] py-14 sm:py-18">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(195,143,63,0.14),transparent_65%)]" />
+              <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
+                <div className="mb-8 flex items-center justify-between gap-4">
+                  <div>
                     <p className="text-xs font-medium uppercase tracking-[0.35em] text-brass-600">
                       Our Precious Treasures
                     </p>
-                    {treasures.length > 1 && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={showPreviousTreasure}
-                          className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
-                          aria-label="Previous treasure"
-                        >
-                          &larr;
-                        </button>
-                        <button
-                          type="button"
-                          onClick={showNextTreasure}
-                          className="cursor-pointer inline-flex h-10 w-10 items-center justify-center border border-warm-300 text-warm-700 transition-colors hover:border-brass-400 hover:text-brass-600"
-                          aria-label="Next treasure"
-                        >
-                          &rarr;
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <h2 className="font-heading mt-3 text-3xl font-bold text-warm-900 sm:text-4xl">
-                    {activeTreasure.name}
-                  </h2>
-                  <p className="mt-3 text-sm uppercase tracking-[0.2em] text-warm-500">
-                    {activeTreasure.category_name}
-                  </p>
-                  {activeTreasure.price !== null && (
-                    <p className="mt-5 text-lg font-semibold text-brass-600">
-                      {formatCurrency(activeTreasure.price, activeTreasure.market_currency)}
+                    <p className="mt-2 text-sm text-warm-500">
+                      A rotating curation of standout handcrafted pieces.
                     </p>
-                  )}
-                  <p className="mt-5 text-base leading-8 text-warm-600 sm:text-lg">
-                    {activeTreasure.short_description ||
-                      "A featured handcrafted piece from our latest curation, chosen for its artistry and timeless character."}
-                  </p>
-                  <div className="mt-8 flex flex-wrap gap-4">
-                    <Link
-                      href={`/categories/${activeTreasure.category_slug}/${activeTreasure.slug}`}
-                      className="inline-flex items-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
-                    >
-                      View Product
-                      <span aria-hidden="true">&rarr;</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleAddTreasureToCart}
-                      disabled={activeTreasure.stock_quantity <= 0}
-                      className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600 disabled:cursor-not-allowed disabled:border-warm-200 disabled:bg-warm-100 disabled:text-warm-400"
-                    >
-                      {activeTreasure.stock_quantity > 0 ? "Add to Cart" : "Out of Stock"}
-                      <span aria-hidden="true">&rarr;</span>
-                    </button>
-                    <Link
-                      href={`/categories/${activeTreasure.category_slug}`}
-                      className="inline-flex items-center gap-2 border border-warm-300 bg-white px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600"
-                    >
-                      Explore Category
-                      <span aria-hidden="true">&rarr;</span>
-                    </Link>
                   </div>
-                  {cartMessage && (
-                    <p className="mt-4 text-sm font-medium text-brass-600">{cartMessage}</p>
-                  )}
-
                   {treasures.length > 1 && (
-                    <div className="mt-8 flex items-center gap-3">
-                      {treasures.map((treasure, index) => (
-                        <button
-                          key={treasure.product_id}
-                          type="button"
-                          onClick={() => setTreasureIndex(index)}
-                          className={`cursor-pointer h-2.5 transition-all ${index === treasureIndex ? "w-10 bg-brass-500" : "w-2.5 bg-warm-300 hover:bg-brass-300"
-                            }`}
-                          aria-label={`Show treasure ${index + 1}: ${treasure.name}`}
-                        />
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={showPreviousTreasure}
+                        className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-full border border-warm-300/80 bg-white/80 text-warm-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brass-400 hover:text-brass-600"
+                        aria-label="Previous treasure"
+                      >
+                        &larr;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={showNextTreasure}
+                        className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-full border border-warm-300/80 bg-white/80 text-warm-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brass-400 hover:text-brass-600"
+                        aria-label="Next treasure"
+                      >
+                        &rarr;
+                      </button>
                     </div>
                   )}
                 </div>
+
+                <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
+                  <div className="relative overflow-hidden rounded-[2rem] border border-brass-200/60 bg-white/75 p-3 shadow-[0_30px_80px_-40px_rgba(49,32,12,0.55)] backdrop-blur">
+                    <div className="relative h-[340px] overflow-hidden rounded-[1.5rem] bg-warm-100 sm:h-[460px]">
+                      {treasures.map((treasure, index) => {
+                        const isActive = index === safeTreasureIndex;
+
+                        return (
+                          <div
+                            key={treasure.product_id}
+                            className={`absolute inset-0 transition-all duration-700 ease-out ${isActive ? "translate-x-0 scale-100 opacity-100" : slideDirection < 0 ? "translate-x-6 scale-[1.02] opacity-0" : "-translate-x-6 scale-[1.02] opacity-0"}`}
+                          >
+                            {treasure.primary_image_url ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={treasure.primary_image_url}
+                                alt={treasure.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="bg-craft-texture h-full w-full" />
+                            )}
+                          </div>
+                        );
+                      })}
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(36,24,10,0.04)_0%,rgba(36,24,10,0.12)_45%,rgba(36,24,10,0.58)_100%)]" />
+                      <div className="absolute left-4 top-4 rounded-full border border-brass-300/70 bg-white/85 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-brass-700 shadow-sm backdrop-blur">
+                        Precious
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                        <p className="text-xs uppercase tracking-[0.3em] text-brass-200">
+                          {activeTreasure.category_name}
+                        </p>
+                        <h2 className="font-heading mt-3 text-3xl font-bold text-white sm:text-4xl">
+                          {activeTreasure.name}
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="max-w-xl">
+                    <div className="overflow-hidden rounded-[2rem] border border-warm-200/80 bg-white/80 p-6 shadow-[0_24px_60px_-36px_rgba(49,32,12,0.45)] backdrop-blur sm:p-8">
+                      <div
+                        key={activeTreasure.product_id}
+                        className="animate-[fade-in_700ms_ease]"
+                      >
+                        <p className="text-xs uppercase tracking-[0.24em] text-warm-500">
+                          Curated spotlight
+                        </p>
+                        <h3 className="font-heading mt-3 text-3xl font-bold text-warm-900 sm:text-4xl">
+                          {activeTreasure.name}
+                        </h3>
+                        {activeTreasure.price !== null && (
+                          <p className="mt-5 text-xl font-semibold text-brass-600">
+                            {formatCurrency(activeTreasure.price, activeTreasure.market_currency)}
+                          </p>
+                        )}
+                        <p className="mt-5 text-base leading-8 text-warm-600 sm:text-lg">
+                          {activeTreasure.short_description ||
+                            "A featured handcrafted piece from our latest curation, chosen for its artistry and timeless character."}
+                        </p>
+
+                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                          <Link
+                            href={`/categories/${activeTreasure.category_slug}/${activeTreasure.slug}`}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-brass-500 bg-brass-500 px-5 py-3 text-center text-sm font-medium uppercase tracking-[0.12em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
+                          >
+                            View Product
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={handleAddTreasureToCart}
+                            disabled={activeTreasure.stock_quantity <= 0}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-warm-300 bg-white px-5 py-3 text-center text-sm font-medium uppercase tracking-[0.12em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600 disabled:cursor-not-allowed disabled:border-warm-200 disabled:bg-warm-100 disabled:text-warm-400"
+                          >
+                            {activeTreasure.stock_quantity > 0 ? "Add to Cart" : "Out of Stock"}
+                          </button>
+                          <Link
+                            href={`/categories/${activeTreasure.category_slug}`}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-warm-300 bg-white px-5 py-3 text-center text-sm font-medium uppercase tracking-[0.12em] text-warm-700 transition-colors hover:border-brass-400 hover:bg-brass-50 hover:text-brass-600"
+                          >
+                            Explore Category
+                          </Link>
+                        </div>
+
+                        {cartMessage && (
+                          <p className="mt-4 text-sm font-medium text-brass-600">{cartMessage}</p>
+                        )}
+                      </div>
+
+                      {treasures.length > 1 && (
+                        <div className="mt-7 flex items-center gap-3">
+                          {treasures.map((treasure, index) => (
+                            <button
+                              key={treasure.product_id}
+                              type="button"
+                              onClick={() => goToTreasure(index)}
+                              className={`cursor-pointer rounded-full transition-all ${index === safeTreasureIndex ? "h-2.5 w-12 bg-brass-500" : "h-2.5 w-2.5 bg-warm-300 hover:bg-brass-300"}`}
+                              aria-label={`Show treasure ${index + 1}: ${treasure.name}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {treasures.length > 1 && (
+                  <div
+                    key={`${activeTreasure.product_id}-${safeTreasureIndex}`}
+                    ref={marqueeViewportRef}
+                    className={`mt-8 overflow-hidden rounded-full border border-brass-200/70 bg-white/70 px-4 py-3 shadow-sm backdrop-blur ${slideDirection > 0 ? "animate-[treasure-strip-in-right_700ms_ease]" : "animate-[treasure-strip-in-left_700ms_ease]"}`}
+                  >
+                    <div
+                      ref={marqueeTrackRef}
+                      className="flex min-w-max items-center gap-3 will-change-transform"
+                    >
+                      {marqueeTreasures.map((treasure, index) => (
+                        <button
+                          key={`${treasure.product_id}-${index}`}
+                          ref={(node) => {
+                            if (index < treasures.length) {
+                              marqueeItemRefs.current[index] = node;
+                            }
+                          }}
+                          type="button"
+                          onClick={() => goToTreasure(index % treasures.length)}
+                          className={`inline-flex items-center justify-center gap-3 rounded-full border px-4 py-2 text-center transition-all ${
+                            index % treasures.length === safeTreasureIndex
+                              ? "border-brass-400 bg-brass-50 text-brass-700 shadow-sm"
+                              : "border-transparent bg-transparent text-warm-600 hover:border-warm-200 hover:bg-warm-50"
+                          }`}
+                        >
+                          <span className="text-xs uppercase tracking-[0.22em] text-brass-500">
+                            Precious
+                          </span>
+                          <span className="font-medium">{treasure.name}</span>
+                          {treasure.price !== null && (
+                            <span className="text-sm font-semibold text-brass-600">
+                              {formatCurrency(treasure.price, treasure.market_currency)}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           )}

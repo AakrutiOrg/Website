@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/browser";
-import { addProductImage } from "@/lib/actions/product-image-actions";
+import { uploadProductImage } from "@/lib/actions/product-image-actions";
 
 type ImageUploaderProps = {
   productId: string;
@@ -22,8 +21,8 @@ export function ImageUploader({ productId }: ImageUploaderProps) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be smaller than 5MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Image must be smaller than 15MB.");
       return;
     }
 
@@ -32,23 +31,17 @@ export function ImageUploader({ productId }: ImageUploaderProps) {
     setProgress(30);
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${productId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("product-images")
-        .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) throw uploadError;
-
+      const formData = new FormData();
+      formData.set("productId", productId);
+      formData.set("image", file);
       setProgress(70);
-      await addProductImage(productId, fileName);
+      await uploadProductImage(formData);
       setProgress(100);
 
       event.target.value = "";
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Failed to upload image.");
+      setError(err instanceof Error ? err.message : "Failed to upload image.");
     } finally {
       setIsUploading(false);
       setProgress(0);
@@ -95,7 +88,7 @@ export function ImageUploader({ productId }: ImageUploaderProps) {
             </div>
             <div>
               <span className="block text-sm font-semibold text-warm-800">Add Image</span>
-              <span className="block text-xs text-warm-400 mt-0.5">PNG, JPG, GIF · up to 5 MB</span>
+              <span className="block text-xs text-warm-400 mt-0.5">PNG, JPG, GIF, WebP · up to 15 MB source</span>
             </div>
           </>
         )}

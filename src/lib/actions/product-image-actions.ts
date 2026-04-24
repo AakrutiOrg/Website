@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
+import { uploadOptimizedImage } from "@/lib/images/upload-optimized-image";
 import { createClient } from "@/lib/supabase/server";
 
 export async function addProductImage(productId: string, storagePath: string) {
@@ -29,6 +30,59 @@ export async function addProductImage(productId: string, storagePath: string) {
   }
 
   revalidatePath(`/admin/products/${productId}/edit`);
+  revalidatePath("/");
+  revalidatePath("/categories", "layout");
+}
+
+export async function uploadProductImage(formData: FormData) {
+  await requireAdmin();
+
+  const productId = formData.get("productId");
+  const imageFile = formData.get("image");
+
+  if (typeof productId !== "string" || !productId) {
+    throw new Error("Product id is required.");
+  }
+
+  if (!(imageFile instanceof File) || imageFile.size === 0) {
+    throw new Error("Please select an image to upload.");
+  }
+
+  const supabase = await createClient();
+  const { storagePath, publicUrl } = await uploadOptimizedImage({
+    bucket: "product-images",
+    folder: productId,
+    file: imageFile,
+    maxWidth: 1800,
+    maxHeight: 1800,
+    quality: 82,
+  });
+
+  const { data: existing } = await supabase
+    .from("product_images")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const isPrimary = !existing;
+
+  const { error } = await supabase.from("product_images").insert({
+    product_id: productId,
+    storage_path: storagePath,
+    is_primary: isPrimary,
+  });
+
+  if (error) {
+    throw new Error(`Failed to save image metadata: ${error.message}`);
+  }
+
+  if (isPrimary) {
+    await supabase.from("products").update({ image_url: publicUrl }).eq("id", productId);
+  }
+
+  revalidatePath(`/admin/products/${productId}/edit`);
+  revalidatePath("/admin/products");
   revalidatePath("/");
   revalidatePath("/categories", "layout");
 }

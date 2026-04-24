@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { supabase } from "@/lib/supabase/browser";
 import { createCategory, updateCategory } from "@/lib/actions/category-actions";
 import type { Category } from "@/types";
 
@@ -37,44 +36,25 @@ export function CategoryForm({ category }: CategoryFormProps) {
     const formData = new FormData(form);
 
     try {
-      // 1. Check if we need to upload a new image
       const file = fileInputRef.current?.files?.[0];
       
       if (file) {
         if (!file.type.startsWith("image/")) {
           throw new Error("Please select a valid image file.");
         }
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error("Image must be smaller than 5MB.");
+        if (file.size > 15 * 1024 * 1024) {
+          throw new Error("Image must be smaller than 15MB.");
         }
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("category-images")
-          .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
-        if (uploadError) {
-          throw new Error(`Failed to upload image: ${uploadError.message}`);
-        }
-
-        const publicUrl = supabase.storage.from("category-images").getPublicUrl(fileName).data.publicUrl;
-        formData.set("image_url", publicUrl);
-      } else if (category?.image_url) {
-        // Carry over existing image if no new one was provided
-        formData.set("image_url", category.image_url);
       }
 
-      // 2. Transact with the server action
       if (isEditing) {
         await updateCategory(category.id, formData);
       } else {
         await createCategory(formData);
       }
 
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setIsSubmitting(false);
     }
   }
@@ -161,6 +141,7 @@ export function CategoryForm({ category }: CategoryFormProps) {
               <span className="text-sm font-medium text-warm-800">Browse Image (Local)</span>
               <input
                 type="file"
+                name="image"
                 accept="image/*"
                 ref={fileInputRef}
                 onChange={handleFileChange}
@@ -168,7 +149,7 @@ export function CategoryForm({ category }: CategoryFormProps) {
               />
             </label>
             <p className="text-xs text-warm-500">
-              Select a cover photo for this category. The image will be safely uploaded to Supabase upon clicking save.
+              Select a cover photo for this category. It will be resized and converted to WebP before saving to Supabase.
             </p>
           </div>
           

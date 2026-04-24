@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 
 import { createProduct, updateProduct } from "@/lib/actions/product-actions";
-import { supabase } from "@/lib/supabase/browser";
 import type { Category, Product } from "@/types";
 import type { Market, ProductMarketData } from "@/types/market";
 
@@ -62,37 +61,20 @@ export function ProductForm({
     setError(null);
 
     try {
-      const uploadedPaths: string[] = [];
-
-      if (previewImages.length > 0) {
-        for (const { file } of previewImages) {
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${targetProductId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("product-images")
-            .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
-          if (uploadError) {
-            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
-          }
-
-          uploadedPaths.push(fileName);
-        }
+      formData.delete("images");
+      for (const { file } of previewImages) {
+        formData.append("images", file);
       }
 
       formData.set("id", targetProductId);
-      if (uploadedPaths.length > 0) {
-        formData.set("new_images", JSON.stringify(uploadedPaths));
-      }
 
       if (isEditing) {
         await updateProduct(product.id, formData);
       } else {
         await createProduct(formData);
       }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
       setIsSubmitting(false);
     }
   }
@@ -394,6 +376,7 @@ export function ProductForm({
             <label className="block">
               <input
                 type="file"
+                name="images"
                 multiple
                 accept="image/*"
                 onChange={handleFileChange}
