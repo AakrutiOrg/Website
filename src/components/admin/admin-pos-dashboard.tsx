@@ -45,6 +45,18 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
   const [pollCount, setPollCount] = useState(0);
   const [isPending, startAction] = useTransition();
   const [activeTab, setActiveTab] = useState<PosTab>("catalogue");
+  const [toastMessage, setToastMessage] = useState<{
+    customerName?: string;
+    customerEmail?: string;
+    paymentMethod?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.product_id, product])), [products]);
 
@@ -99,8 +111,16 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
 
       if (result.paymentStatus === "paid") {
         setFeedback({ type: "success", text: result.message });
+        setToastMessage({
+          customerName: result.customerName,
+          customerEmail: result.customerEmail,
+          paymentMethod: result.paymentMethod,
+        });
         setPendingOrderId(null);
-        startTransition(() => router.refresh());
+        startTransition(() => {
+          router.refresh();
+          setActiveTab("catalogue");
+        });
         return;
       }
 
@@ -204,7 +224,17 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
 
         setPendingOrderId(null);
         setFeedback({ type: "success", text: `${result.message} Reference: ${result.orderId}` });
-        startTransition(() => router.refresh());
+        if (result.paymentStatus === "paid") {
+          setToastMessage({
+            customerName: result.customerName,
+            customerEmail: result.customerEmail,
+            paymentMethod: result.paymentMethod,
+          });
+        }
+        startTransition(() => {
+          router.refresh();
+          setActiveTab("catalogue");
+        });
       } catch (error) {
         setFeedback({
           type: "error",
@@ -262,11 +292,11 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
                 ) : (
                   <div className="h-16 w-16 shrink-0 rounded-xl bg-white sm:h-20 sm:w-20" />
                 )}
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium text-warm-900">{product.name}</p>
-                      <p className="mt-0.5 text-xs uppercase tracking-[0.2em] text-warm-500">{product.category_name}</p>
+                      <p className="mt-0.5 truncate text-xs uppercase tracking-[0.2em] text-warm-500">{product.category_name}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-base font-semibold text-warm-900">{formatCurrency(product.price)}</p>
@@ -275,7 +305,7 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="mt-auto pt-3 flex items-center justify-between gap-2">
                     <div className="text-xs text-warm-500">
                       {outOfStock ? "Unavailable" : lowStock ? "Low stock" : "Ready"}
                     </div>
@@ -677,6 +707,31 @@ export function AdminPosDashboard({ products, recentSales, sumUpConfigured }: Pr
           </>
         )}
       </section>
+
+      {/* Toast Message */}
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 z-[100] max-w-sm rounded-2xl border border-brass-200 bg-brass-50 p-4 shadow-lg animate-in slide-in-from-bottom-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 text-brass-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-semibold text-brass-900">Payment Successful ({toastMessage.paymentMethod || "Card"})</p>
+              <p className="text-sm text-brass-800">
+                {toastMessage.customerEmail
+                  ? `Receipt sent to ${toastMessage.customerEmail} for ${toastMessage.customerName || "Customer"}.`
+                  : `Order placed for ${toastMessage.customerName || "Customer"}.`}
+              </p>
+            </div>
+            <button
+              onClick={() => setToastMessage(null)}
+              className="text-brass-500 hover:text-brass-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

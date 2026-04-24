@@ -1,10 +1,9 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { uploadOptimizedImage } from "@/lib/images/upload-optimized-image";
 import { createClient } from "@/lib/supabase/server";
 import { getMarkets } from "@/services/markets/get-markets";
 import type { ProductAttributes } from "@/types";
@@ -109,12 +108,6 @@ async function ensureFeaturedLimit(supabase: Awaited<ReturnType<typeof createCli
   }
 }
 
-function getUploadedImageFiles(formData: FormData) {
-  return formData
-    .getAll("images")
-    .filter((value): value is File => value instanceof File && value.size > 0);
-}
-
 async function getProductStoragePaths(productId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: productImages } = await supabase
     .from("product_images")
@@ -159,7 +152,6 @@ export async function createProduct(formData: FormData) {
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
   const attributes = buildProductAttributes(formData);
-  const imageFiles = getUploadedImageFiles(formData);
 
   await ensureFeaturedLimit(supabase, is_featured);
 
@@ -180,29 +172,6 @@ export async function createProduct(formData: FormData) {
 
   if (error || !product) {
     throw new Error(`Failed to create product globally: ${error?.message}`);
-  }
-
-  if (imageFiles.length > 0) {
-    for (const [index, file] of imageFiles.entries()) {
-      const { storagePath, publicUrl } = await uploadOptimizedImage({
-        bucket: "product-images",
-        folder: product.id,
-        file,
-        maxWidth: 1800,
-        maxHeight: 1800,
-        quality: 82,
-      });
-
-      await supabase.from("product_images").insert({
-        product_id: product.id,
-        storage_path: storagePath,
-        is_primary: index === 0,
-      });
-
-      if (index === 0) {
-        await supabase.from("products").update({ image_url: publicUrl }).eq("id", product.id);
-      }
-    }
   }
 
   // Handle distinct market matrices
@@ -230,7 +199,6 @@ export async function updateProduct(id: string, formData: FormData) {
 
   const base_price = basePriceInput ? parseFloat(basePriceInput) : null;
   const attributes = buildProductAttributes(formData);
-  const imageFiles = getUploadedImageFiles(formData);
 
   await ensureFeaturedLimit(supabase, is_featured, id);
 
@@ -253,38 +221,6 @@ export async function updateProduct(id: string, formData: FormData) {
 
   if (error) {
     throw new Error(`Failed to update global product structure: ${error.message}`);
-  }
-
-  if (imageFiles.length > 0) {
-    const { data: existingImages } = await supabase
-      .from("product_images")
-      .select("id")
-      .eq("product_id", id)
-      .eq("is_primary", true);
-
-    const needsPrimary = !existingImages || existingImages.length === 0;
-
-    for (const [index, file] of imageFiles.entries()) {
-      const { storagePath, publicUrl } = await uploadOptimizedImage({
-        bucket: "product-images",
-        folder: id,
-        file,
-        maxWidth: 1800,
-        maxHeight: 1800,
-        quality: 82,
-      });
-
-      const isFirstUploadHere = needsPrimary && index === 0;
-      await supabase.from("product_images").insert({
-        product_id: id,
-        storage_path: storagePath,
-        is_primary: isFirstUploadHere,
-      });
-
-      if (isFirstUploadHere) {
-        await supabase.from("products").update({ image_url: publicUrl }).eq("id", id);
-      }
-    }
   }
 
   // Handle distinct market matrices

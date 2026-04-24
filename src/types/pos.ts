@@ -28,6 +28,9 @@ export type PosSaleResult = {
   orderId?: string;
   paymentStatus?: "pending" | "paid" | "failed";
   message: string;
+  customerName?: string;
+  customerEmail?: string;
+  paymentMethod?: string;
 };
 
 export type PosDeviceTestResult = {

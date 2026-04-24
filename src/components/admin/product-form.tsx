@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef } from "react";
 
@@ -23,7 +23,6 @@ export function ProductForm({
 }: ProductFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewImages, setPreviewImages] = useState<{ file: File, url: string }[]>([]);
   const newIdRef = useRef(crypto.randomUUID());
   const size = product?.attributes?.size ?? '';
   const sizeUnit = product?.attributes?.size_unit ?? 'inch';
@@ -34,38 +33,11 @@ export function ProductForm({
   const isEditing = !!product;
   const targetProductId = isEditing ? product.id : newIdRef.current;
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
-    if (previewImages.length + files.length > 5) {
-      setError("You can only upload a maximum of 5 images at once.");
-      return;
-    }
-
-    const newPreviews = files.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    }));
-
-    setPreviewImages((prev) => [...prev, ...newPreviews]);
-    setError(null);
-  }
-
-  function removePreview(index: number) {
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-  }
-
   async function action(formData: FormData) {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      formData.delete("images");
-      for (const { file } of previewImages) {
-        formData.append("images", file);
-      }
-
       formData.set("id", targetProductId);
 
       if (isEditing) {
@@ -366,41 +338,6 @@ export function ProductForm({
               </div>
             );
           })}
-        </div>
-
-        <div className="space-y-6 border-t border-warm-200 pt-6">
-          <h3 className="font-heading font-semibold text-warm-900">Product Details & Imagery</h3>
-          <p className="mb-6 text-sm text-warm-500">Upload up to 5 images for this product.</p>
-
-          <div className="space-y-4">
-            <label className="block">
-              <input
-                type="file"
-                name="images"
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-warm-500 file:mr-4 file:rounded-xl file:border-0 file:bg-warm-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-warm-700 transition hover:file:bg-warm-200"
-              />
-            </label>
-
-            {previewImages.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-4">
-                {previewImages.map((img, idx) => (
-                  <div key={idx} className="group relative h-24 w-24 overflow-hidden rounded-xl border border-warm-200">
-                    <img src={img.url} alt="upload preview" className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removePreview(idx)}
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <span className="text-xl">&times;</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="border-t border-warm-100 pt-4">

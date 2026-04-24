@@ -754,6 +754,9 @@ export async function createPosSale(input: PosSaleInput): Promise<PosSaleResult>
       orderId: order.order_id,
       paymentStatus: "paid",
       message: "Cash sale completed and receipt email sent.",
+      customerName: input.customer.name,
+      customerEmail: input.customer.email,
+      paymentMethod: "Cash",
     };
   }
 
@@ -813,6 +816,9 @@ export async function syncPosPaymentStatus(orderId: string): Promise<PosSaleResu
       orderId: order.order_id,
       paymentStatus: "paid",
       message: "Payment has already been completed.",
+      customerName: order.customer_name,
+      customerEmail: order.email || undefined,
+      paymentMethod: order.payment_method === "cash" ? "Cash" : "Card",
     };
   }
 
@@ -842,6 +848,9 @@ export async function syncPosPaymentStatus(orderId: string): Promise<PosSaleResu
         orderId: order.order_id,
         paymentStatus: "paid",
         message: "SumUp payment confirmed and customer receipt sent.",
+        customerName: order.customer_name,
+        customerEmail: order.email || undefined,
+        paymentMethod: "Card",
       };
     }
 
