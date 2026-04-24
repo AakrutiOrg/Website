@@ -213,12 +213,15 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
 
   return (
     <div className="relative overflow-hidden">
-      <div
-        className="flex items-start transition-transform duration-700 ease-in-out will-change-transform"
-        style={{ transform: page === "hero" ? "translateX(0)" : "translateX(-100%)" }}
-      >
-        <div className="min-w-full bg-warm-900">
-          <section className="relative overflow-hidden bg-warm-900 py-12 sm:py-14 lg:py-16">
+      <div className="relative">
+        <div
+          className={`w-full transition-all duration-700 ease-in-out will-change-transform ${
+            page === "hero"
+              ? "relative translate-x-0 opacity-100"
+              : "pointer-events-none absolute inset-0 -translate-x-full opacity-0"
+          }`}
+        >
+          <section className="relative overflow-hidden bg-warm-900 py-8 sm:py-10 md:py-12 lg:py-16">
             <div className="bg-craft-texture absolute inset-0 opacity-20" />
             <div className="absolute inset-0 bg-gradient-to-b from-warm-900 via-warm-900/96 to-warm-800" />
 
@@ -227,22 +230,22 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
             <div className="absolute bottom-6 left-6 h-8 w-8 border-b-2 border-l-2 border-brass-400/60 sm:bottom-10 sm:left-10" />
             <div className="absolute bottom-6 right-6 h-8 w-8 border-b-2 border-r-2 border-brass-400/60 sm:bottom-10 sm:right-10" />
 
-            <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-center px-6 text-center sm:px-10 lg:px-12">
-              <div className="mb-4 flex flex-col items-center gap-3">
+            <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-center px-6 text-center sm:px-8 lg:px-12">
+              <div className="mb-3 flex flex-col items-center gap-2.5 sm:gap-3">
                 <Image
                   src="/logo.png"
                   alt="Aakruti"
                   width={180}
                   height={180}
-                  className="h-20 w-auto drop-shadow-2xl sm:h-24 lg:h-28"
+                  className="h-16 w-auto drop-shadow-2xl sm:h-20 md:h-24 lg:h-28"
                   priority
                 />
-                <div className="flex items-center gap-5">
-                  <div className="h-px w-14 bg-brass-500 sm:w-20" />
-                  <p className="font-[family-name:var(--font-great-vibes)] text-2xl text-warm-200 sm:text-3xl lg:text-4xl">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <div className="h-px w-10 bg-brass-500 sm:w-16 md:w-20" />
+                  <p className="font-[family-name:var(--font-great-vibes)] text-xl text-warm-200 sm:text-2xl md:text-3xl lg:text-4xl">
                     Shaping your Abode
                   </p>
-                  <div className="h-px w-14 bg-brass-500 sm:w-20" />
+                  <div className="h-px w-10 bg-brass-500 sm:w-16 md:w-20" />
                 </div>
               </div>
 
@@ -250,11 +253,11 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                 Est. 2025 · Handcrafted with Pride
               </p>
 
-              <h1 className="font-heading mb-3 text-4xl font-bold leading-tight tracking-tight text-warm-50 sm:text-5xl lg:text-6xl">
+              <h1 className="font-heading mb-3 text-3xl font-bold leading-tight tracking-tight text-warm-50 sm:text-4xl md:text-5xl lg:text-6xl">
                 The Art of Craftings
               </h1>
 
-              <p className="mx-auto mb-6 max-w-xl text-base leading-7 text-warm-300 sm:text-lg">
+              <p className="mx-auto mb-5 max-w-xl text-sm leading-7 text-warm-300 sm:text-base md:text-lg">
                 Each piece tells a story of generations. Explore our curated
                 collection of authentically crafted brass artifacts and patchworks from the
                 different parts of India.
@@ -262,7 +265,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
 
               <button
                 onClick={() => setPage("collections")}
-                className="cursor-pointer inline-flex items-center gap-2 border border-brass-400 px-8 py-3 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 backdrop-blur-sm transition-all duration-200 hover:border-brass-500 hover:bg-brass-500 hover:text-warm-900"
+                className="cursor-pointer inline-flex items-center gap-2 border border-brass-400 px-6 py-2.5 text-sm font-medium uppercase tracking-[0.15em] text-brass-300 backdrop-blur-sm transition-all duration-200 hover:border-brass-500 hover:bg-brass-500 hover:text-warm-900 sm:px-8 sm:py-3"
               >
                 Explore all Treasures
                 <span aria-hidden="true">&rarr;</span>
@@ -271,10 +274,10 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
           </section>
 
           {activeTreasure && (
-            <section className="relative overflow-hidden bg-[linear-gradient(180deg,#faf5ef_0%,#fffaf4_55%,#f4eadb_100%)] py-14 sm:py-18">
+            <section className="relative overflow-hidden bg-[linear-gradient(180deg,#faf5ef_0%,#fffaf4_55%,#f4eadb_100%)] pt-8 pb-5 sm:pt-10 sm:pb-6 md:pt-12 md:pb-8 lg:pt-16 lg:pb-10">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(195,143,63,0.14),transparent_65%)]" />
               <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
-                <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="mb-5 flex items-center justify-between gap-4 sm:mb-6">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-[0.35em] text-brass-600">
                       Our Precious Treasures
@@ -305,9 +308,9 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                   )}
                 </div>
 
-                <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
+                <div className="grid gap-5 md:grid-cols-[1.02fr_0.98fr] md:items-center lg:grid-cols-[1.12fr_0.88fr] lg:gap-8">
                   <div className="relative overflow-hidden rounded-[2rem] border border-brass-200/60 bg-white/75 p-3 shadow-[0_30px_80px_-40px_rgba(49,32,12,0.55)] backdrop-blur">
-                    <div className="relative h-[340px] overflow-hidden rounded-[1.5rem] bg-warm-100 sm:h-[460px]">
+                    <div className="relative h-[240px] overflow-hidden rounded-[1.5rem] bg-warm-100 sm:h-[300px] md:h-[360px] lg:h-[460px]">
                       {treasures.map((treasure, index) => {
                         const isActive = index === safeTreasureIndex;
 
@@ -333,19 +336,19 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       <div className="absolute left-4 top-4 rounded-full border border-brass-300/70 bg-white/85 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-brass-700 shadow-sm backdrop-blur">
                         Precious
                       </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-7">
                         <p className="text-xs uppercase tracking-[0.3em] text-brass-200">
                           {activeTreasure.category_name}
                         </p>
-                        <h2 className="font-heading mt-3 text-3xl font-bold text-white sm:text-4xl">
+                        <h2 className="font-heading mt-2 text-2xl font-bold text-white sm:text-3xl lg:mt-3 lg:text-4xl">
                           {activeTreasure.name}
                         </h2>
                       </div>
                     </div>
                   </div>
 
-                  <div className="max-w-xl">
-                    <div className="overflow-hidden rounded-[2rem] border border-warm-200/80 bg-white/80 p-6 shadow-[0_24px_60px_-36px_rgba(49,32,12,0.45)] backdrop-blur sm:p-8">
+                  <div className="max-w-xl md:max-w-none">
+                    <div className="overflow-hidden rounded-[2rem] border border-warm-200/80 bg-white/80 p-5 shadow-[0_24px_60px_-36px_rgba(49,32,12,0.45)] backdrop-blur sm:p-6 lg:p-8">
                       <div
                         key={activeTreasure.product_id}
                         className="animate-[fade-in_700ms_ease]"
@@ -353,20 +356,20 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                         <p className="text-xs uppercase tracking-[0.24em] text-warm-500">
                           Curated spotlight
                         </p>
-                        <h3 className="font-heading mt-3 text-3xl font-bold text-warm-900 sm:text-4xl">
+                        <h3 className="font-heading mt-3 text-2xl font-bold text-warm-900 sm:text-3xl lg:text-4xl">
                           {activeTreasure.name}
                         </h3>
                         {activeTreasure.price !== null && (
-                          <p className="mt-5 text-xl font-semibold text-brass-600">
+                          <p className="mt-4 text-lg font-semibold text-brass-600 sm:text-xl">
                             {formatCurrency(activeTreasure.price, activeTreasure.market_currency)}
                           </p>
                         )}
-                        <p className="mt-5 text-base leading-8 text-warm-600 sm:text-lg">
+                        <p className="mt-4 text-sm leading-7 text-warm-600 sm:text-base md:text-[15px] lg:text-lg lg:leading-8">
                           {activeTreasure.short_description ||
                             "A featured handcrafted piece from our latest curation, chosen for its artistry and timeless character."}
                         </p>
 
-                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
                           <Link
                             href={`/categories/${activeTreasure.category_slug}/${activeTreasure.slug}`}
                             className="inline-flex items-center justify-center gap-2 rounded-full border border-brass-500 bg-brass-500 px-5 py-3 text-center text-sm font-medium uppercase tracking-[0.12em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
@@ -395,7 +398,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                       </div>
 
                       {treasures.length > 1 && (
-                        <div className="mt-7 flex items-center gap-3">
+                        <div className="mt-6 flex items-center gap-3">
                           {treasures.map((treasure, index) => (
                             <button
                               key={treasure.product_id}
@@ -415,7 +418,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                   <div
                     key={`${activeTreasure.product_id}-${safeTreasureIndex}`}
                     ref={marqueeViewportRef}
-                    className={`mt-8 overflow-hidden rounded-full border border-brass-200/70 bg-white/70 px-4 py-3 shadow-sm backdrop-blur ${slideDirection > 0 ? "animate-[treasure-strip-in-right_700ms_ease]" : "animate-[treasure-strip-in-left_700ms_ease]"}`}
+                    className={`mt-4 overflow-hidden rounded-full border border-brass-200/70 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mt-5 sm:px-4 sm:py-3 ${slideDirection > 0 ? "animate-[treasure-strip-in-right_700ms_ease]" : "animate-[treasure-strip-in-left_700ms_ease]"}`}
                   >
                     <div
                       ref={marqueeTrackRef}
@@ -456,12 +459,19 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
           )}
         </div>
 
-        <div className="min-w-full bg-warm-50 py-20 sm:py-24">
+        <div
+          className={`w-full transition-all duration-700 ease-in-out will-change-transform ${
+            page === "collections"
+              ? "relative translate-x-0 opacity-100"
+              : "pointer-events-none absolute inset-0 translate-x-full opacity-0"
+          }`}
+        >
+          <div className="min-w-full bg-warm-50 pt-8 pb-10 sm:pt-10 sm:pb-12 lg:pt-14 lg:pb-16">
           <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
-            <div className="mb-14 text-center">
+            <div className="mb-8 text-center sm:mb-10 lg:mb-12">
               <button
                 onClick={() => setPage("hero")}
-                className="mb-6 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-brass-600 transition-colors hover:text-brass-500"
+                className="mb-4 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-brass-600 transition-colors hover:text-brass-500 sm:mb-6"
               >
                 <span aria-hidden="true">&larr;</span>
                 Back
@@ -472,11 +482,11 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
               <h2 className="font-heading text-3xl font-bold text-warm-900 sm:text-4xl">
                 Shop by Category
               </h2>
-              <OrnamentalDivider className="mx-auto mt-6 max-w-xs" />
+              <OrnamentalDivider className="mx-auto mt-4 max-w-xs sm:mt-6" />
             </div>
 
             {categories.length > 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {categories.map((category) => (
                   <Link
                     key={category.id}
@@ -532,7 +542,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-4 border border-dashed border-warm-300 bg-white py-16 text-center">
+              <div className="flex flex-col items-center gap-4 border border-dashed border-warm-300 bg-white py-10 text-center sm:py-16">
                 <span className="text-2xl text-brass-300" aria-hidden="true">
                   &#10022;
                 </span>
@@ -542,6 +552,7 @@ export function HomeSlider({ categories, treasures }: HomeSliderProps) {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
