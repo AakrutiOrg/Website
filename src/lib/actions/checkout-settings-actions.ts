@@ -20,6 +20,8 @@ export async function saveCheckoutSettings(formData: FormData) {
   const customerTemplateInput = (formData.get("customer_email_template") as string) || "";
   const bankAccountDetailsInput = (formData.get("bank_account_details") as string) || "";
 
+  const adminBccEmailInput = (formData.get("admin_bcc_email") as string) || "";
+
   const order_notification_emails = emailsInput
     .split(/[\n,]+/)
     .map((value) => value.trim().toLowerCase())
@@ -38,6 +40,11 @@ export async function saveCheckoutSettings(formData: FormData) {
     customerSubjectInput.trim() || DEFAULT_CUSTOMER_CONFIRMATION_SUBJECT;
   const customer_email_template =
     customerTemplateInput.trim() || DEFAULT_CUSTOMER_CONFIRMATION_TEMPLATE;
+  const admin_bcc_email = adminBccEmailInput.trim();
+
+  if (admin_bcc_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(admin_bcc_email)) {
+    throw new Error(`Invalid BCC email: ${admin_bcc_email}`);
+  }
 
   const { error } = await supabase.from("checkout_settings").upsert(
     {
@@ -47,6 +54,7 @@ export async function saveCheckoutSettings(formData: FormData) {
       customer_email_subject,
       customer_email_template,
       bank_account_details: bankAccountDetailsInput.trim(),
+      admin_bcc_email: admin_bcc_email || null,
     },
     { onConflict: "id" },
   );

@@ -429,6 +429,14 @@ export async function sendInvoice(
   const resendEnv = getResendEnv();
   const logoAttachment = await getInlineLogoAttachment();
 
+  const { data: checkoutSettings } = await supabase
+    .from("checkout_settings")
+    .select("admin_bcc_email")
+    .eq("id", "default")
+    .maybeSingle();
+
+  const bccEmail = checkoutSettings?.admin_bcc_email || resendEnv.RESEND_FROM_EMAIL;
+
   const emailRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -438,6 +446,7 @@ export async function sendInvoice(
     body: JSON.stringify({
       from: resendEnv.RESEND_FROM_EMAIL,
       to: [order.email],
+      bcc: [bccEmail],
       subject: `Invoice for your Aakruti order ${order.order_id}`,
       html,
       text: `Dear ${order.customer_name},\n\nPlease find your invoice for order ${order.order_id}.\n\nTotal Due: £${totalDue.toFixed(2)}\n\nAakruti · Shaping your Abode`,
@@ -529,6 +538,14 @@ export async function fulfillOrder(
         items: items ?? [],
       });
 
+      const { data: checkoutSettings } = await supabase
+        .from("checkout_settings")
+        .select("admin_bcc_email")
+        .eq("id", "default")
+        .maybeSingle();
+
+      const bccEmail = checkoutSettings?.admin_bcc_email || resendEnv.RESEND_FROM_EMAIL;
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -538,6 +555,7 @@ export async function fulfillOrder(
         body: JSON.stringify({
           from: resendEnv.RESEND_FROM_EMAIL,
           to: [order.email],
+          bcc: [bccEmail],
           subject: `Aakruti: Your order ${order.order_id} is on its way!`,
           html,
           text: `Your order ${order.order_id} has been fulfilled. ${deliveryType === "tracked" ? `Tracking number: ${trackingNumber}` : "It will be delivered via Home Delivery."}`,
@@ -661,6 +679,14 @@ export async function cancelOrder(orderDbId: string, reason: string) {
         items: items ?? [],
       });
 
+      const { data: checkoutSettings } = await supabase
+        .from("checkout_settings")
+        .select("admin_bcc_email")
+        .eq("id", "default")
+        .maybeSingle();
+
+      const bccEmail = checkoutSettings?.admin_bcc_email || resendEnv.RESEND_FROM_EMAIL;
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -670,6 +696,7 @@ export async function cancelOrder(orderDbId: string, reason: string) {
         body: JSON.stringify({
           from: resendEnv.RESEND_FROM_EMAIL,
           to: [order.email],
+          bcc: [bccEmail],
           subject: `Aakruti: Your order ${order.order_id} has been cancelled`,
           html,
           text: `Your order ${order.order_id} has been cancelled.\n\nReason: ${reason.trim()}`,

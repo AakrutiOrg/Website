@@ -1,4 +1,4 @@
-﻿import { saveCheckoutSettings } from "@/lib/actions/checkout-settings-actions";
+import { saveCheckoutSettings } from "@/lib/actions/checkout-settings-actions";
 import { getDefaultCheckoutSettings } from "@/lib/checkout";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,6 +41,20 @@ export default async function AdminCheckoutSettingsPage() {
           />
           <span className="text-xs text-warm-500">
             Add one email per line or separate them with commas.
+          </span>
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-warm-800">Admin BCC Email</span>
+          <input
+            type="email"
+            name="admin_bcc_email"
+            defaultValue={settings.admin_bcc_email ?? ""}
+            placeholder="admin@example.com"
+            className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+          />
+          <span className="text-xs text-warm-500">
+            Optional. A copy of all customer emails (e.g. POS receipts, invoices) will be BCC'd to this address.
           </span>
         </label>
 

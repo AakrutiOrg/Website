@@ -7,6 +7,7 @@ create table if not exists public.checkout_settings (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   bank_account_details text,
+  admin_bcc_email text,
 
   constraint checkout_settings_singleton_check check (id = 'default')
 );

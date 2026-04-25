@@ -201,9 +201,45 @@ function buildPosReceiptEmailHtml(args: {
   customerName: string;
   paymentMethod: string;
   subtotal: number;
+  discountType?: "percentage" | "absolute" | null;
+  discountAmount?: number | null;
   paidAt: string;
   items: (OrderItem & { imageUrl?: string | null })[];
 }) {
+  const grossTotal = args.items.reduce((sum, item) => sum + (item.unit_price_snapshot ?? 0) * item.quantity, 0);
+
+  let summaryRows = "";
+  if (args.discountType && args.discountAmount && args.discountAmount > 0) {
+    const savings = args.discountType === "percentage" 
+      ? grossTotal * (args.discountAmount / 100)
+      : args.discountAmount;
+    const discountLabel = args.discountType === "percentage" 
+      ? `Discount (${args.discountAmount}%)`
+      : `Discount`;
+
+    summaryRows = `
+      <tr>
+        <td colspan="5" style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;color:#145018;text-align:right;">Subtotal</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:14px;font-weight:700;color:#145018;text-align:right;">£${grossTotal.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td colspan="5" style="padding:14px;padding-top:0;font-size:14px;color:#2e7d32;text-align:right;">${discountLabel}</td>
+        <td style="padding:14px;padding-top:0;font-size:14px;font-weight:700;color:#2e7d32;text-align:right;">-£${savings.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td colspan="5" style="padding:14px;font-size:16px;font-weight:700;color:#145018;text-align:right;">Total Paid</td>
+        <td style="padding:14px;font-size:16px;font-weight:700;color:#145018;text-align:right;">£${args.subtotal.toFixed(2)}</td>
+      </tr>
+    `;
+  } else {
+    summaryRows = `
+      <tr>
+        <td colspan="5" style="padding:14px;border-top:1px solid #e8f5e8;font-size:16px;font-weight:700;color:#145018;text-align:right;">Total Paid</td>
+        <td style="padding:14px;border-top:1px solid #e8f5e8;font-size:16px;font-weight:700;color:#145018;text-align:right;">£${args.subtotal.toFixed(2)}</td>
+      </tr>
+    `;
+  }
+
   const itemRows = args.items
     .map((item) => {
       const variant = [
@@ -274,6 +310,7 @@ function buildPosReceiptEmailHtml(args: {
                     <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#548520;text-align:right;">Total</td>
                   </tr>
                   ${itemRows}
+                  ${summaryRows}
                 </table>
               </td>
             </tr>
@@ -329,11 +366,21 @@ async function sendReceiptEmail(order: Order, items: OrderItem[]) {
   const paymentMethodLabel =
     order.payment_method === "sumup_solo" ? "Card via SumUp Solo" : order.payment_method === "cash" ? "Cash" : "Payment received";
 
+  const { data: checkoutSettings } = await supabase
+    .from("checkout_settings")
+    .select("admin_bcc_email")
+    .eq("id", "default")
+    .maybeSingle();
+
+  const bccEmail = checkoutSettings?.admin_bcc_email || resendEnv.RESEND_FROM_EMAIL;
+
   const html = buildPosReceiptEmailHtml({
     orderId: order.order_id,
     customerName: order.customer_name,
     paymentMethod: paymentMethodLabel,
     subtotal: order.subtotal ?? 0,
+    discountType: order.discount_type as "percentage" | "absolute" | null,
+    discountAmount: order.discount_amount,
     paidAt: paidAtLabel,
     items: itemsWithImages,
   });
@@ -347,6 +394,7 @@ async function sendReceiptEmail(order: Order, items: OrderItem[]) {
     body: JSON.stringify({
       from: resendEnv.RESEND_FROM_EMAIL,
       to: [order.email],
+      bcc: [bccEmail],
       subject: `Aakruti receipt for ${order.order_id}`,
       html,
       text: `Receipt for ${order.order_id}\nPayment method: ${paymentMethodLabel}\nTotal: £${(order.subtotal ?? 0).toFixed(2)}`,
