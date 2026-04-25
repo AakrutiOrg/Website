@@ -37,7 +37,7 @@
 }
 
 body {
-  background-color: #F5FBF5;
+  background-color: #FAFAF7;
   color: #145018;
 }
 
@@ -158,16 +158,6 @@ summary {
   }
 }
 
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -180,26 +170,14 @@ summary {
   }
 }
 
-@keyframes treasure-strip-in-right {
+@keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateX(28px);
+    transform: translateY(16px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes treasure-strip-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }

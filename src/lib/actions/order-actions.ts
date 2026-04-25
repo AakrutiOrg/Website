@@ -74,9 +74,9 @@ function buildFulfillmentEmailHtml(args: {
         </tr>
         <tr><td style="padding:32px 24px;">
           <p style="margin:0 0 8px 0;font-size:18px;color:#145018;">Dear ${customerName},</p>
-          <p style="margin:0 0 24px 0;font-size:15px;line-height:28px;color:#2e7d32;">Great news! Your Aakruti treasures are on their way to you.</p>
+          <p style="margin:0 0 24px 0;font-size:15px;line-height:28px;color:#2e7d32;">Great news! Your Aakruti Treasures are on their way to you.</p>
           ${deliveryBlock}
-          <h2 style="margin:0 0 14px 0;font-size:18px;color:#145018;">Your Chosen Treasures</h2>
+          <h2 style="margin:0 0 14px 0;font-size:18px;color:#145018;">Your Treasures</h2>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e8f5e8;margin:0 0 24px 0;">
             <tr>
               <td style="padding:12px 14px;background:#f5fbf5;font-size:12px;font-weight:700;text-transform:uppercase;color:#548520;">Item</td>
@@ -84,7 +84,7 @@ function buildFulfillmentEmailHtml(args: {
             </tr>
             ${itemRows}
           </table>
-          <p style="margin:0;font-size:14px;line-height:24px;color:#388e3c;">Thank you for choosing Aakruti. We hope these treasures bring joy to your home.</p>
+          <p style="margin:0;font-size:14px;line-height:24px;color:#388e3c;">Thank you for choosing Aakruti. We hope these Treasures bring joy and beauty to your home.</p>
         </td></tr>
         <tr>
           <td style="padding:20px 24px;background:#f5fbf5;text-align:center;font-size:12px;color:#7ab57c;border-top:1px solid #e8f5e8;">
@@ -135,7 +135,7 @@ function buildCancellationEmailHtml(args: {
             <tr><td style="padding:14px 16px;background:#fff1f2;font-size:12px;font-weight:700;text-transform:uppercase;color:#991b1b;">Cancellation Reason</td></tr>
             <tr><td style="padding:16px;font-size:14px;line-height:24px;color:#145018;">${cancellationReason}</td></tr>
           </table>
-          <h2 style="margin:0 0 14px 0;font-size:18px;color:#145018;">Cancelled Items</h2>
+          <h2 style="margin:0 0 14px 0;font-size:18px;color:#145018;">Cancelled Treasures</h2>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #fecaca;margin:0 0 24px 0;">
             <tr>
               <td style="padding:12px 14px;background:#fff1f2;font-size:12px;font-weight:700;text-transform:uppercase;color:#991b1b;">Item</td>
@@ -143,7 +143,7 @@ function buildCancellationEmailHtml(args: {
             </tr>
             ${itemRows}
           </table>
-          <p style="margin:0;font-size:14px;line-height:24px;color:#388e3c;">We hope to welcome you back to Aakruti soon. Please feel free to browse our collection again.</p>
+          <p style="margin:0;font-size:14px;line-height:24px;color:#388e3c;">We hope to welcome you back to Aakruti soon. Please feel free to browse our Treasures and find something that speaks to you.</p>
         </td></tr>
         <tr>
           <td style="padding:20px 24px;background:#f5fbf5;text-align:center;font-size:12px;color:#7ab57c;border-top:1px solid #e8f5e8;">
@@ -228,7 +228,7 @@ function buildInvoiceEmailHtml(args: {
         <tr>
           <td style="background:linear-gradient(135deg,#145018,#6da228);padding:28px 24px;text-align:center;">
             <img src="cid:aakruti-logo" alt="Aakruti" width="150" style="display:block;margin:0 auto 16px auto;width:150px;max-width:100%;height:auto;" />
-            <p style="margin:0;font-size:14px;line-height:22px;color:#e8f5e8;font-family:'Great Vibes',cursive;">Shaping your Abode</p>
+            <p style="margin:0;font-size:16px;line-height:22px;color:#c4e786;font-family:'Great Vibes',cursive;letter-spacing:0.02em;">Shaping your Abode</p>
             <p style="margin:16px 0 0 0;font-size:14px;line-height:22px;color:#e8f5e8;">Invoice</p>
             <p style="margin:8px 0 0 0;font-size:24px;line-height:30px;font-weight:700;color:#ffffff;">Order Number: ${orderId}</p>
             <p style="margin:6px 0 0 0;font-size:12px;color:#e8f5e8;">${orderDate}</p>

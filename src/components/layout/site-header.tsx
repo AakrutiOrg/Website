@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 
 const NAV_LINKS = [
-  { label: "Collections", href: "/?view=collections" },
+  { label: "Collections", href: "/#collections" },
   { label: "About", href: "#" },
   { label: "Contact", href: "#" },
 ];
@@ -17,8 +17,8 @@ function BagIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
+      width="19"
+      height="19"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -38,8 +38,8 @@ function MenuIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -49,8 +49,8 @@ function MenuIcon() {
       aria-hidden="true"
     >
       <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <line x1="4" y1="18" x2="20" y2="18" />
+      <line x1="8" y1="12" x2="20" y2="12" />
+      <line x1="12" y1="18" x2="20" y2="18" />
     </svg>
   );
 }
@@ -59,8 +59,8 @@ function CloseIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -83,41 +83,37 @@ export function SiteHeader() {
   if (pathname.startsWith("/admin")) return null;
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
-      {/* Green accent bar */}
-      <div className="h-1 bg-gradient-to-r from-warm-900 via-brass-400 to-warm-900" />
+    <header className="sticky top-0 z-50 border-b border-warm-100/80 bg-white/95 shadow-sm backdrop-blur-sm">
+      <div className="h-px bg-gradient-to-r from-warm-900 via-brass-500 to-warm-900" />
 
       <nav
         className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12"
         aria-label="Main navigation"
       >
-        <div className="flex h-20 items-center justify-between">
-          {/* Logo */}
+        <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="Aakruti"
-              width={160}
-              height={64}
-              className="h-14 w-auto object-contain sm:h-16"
+              width={120}
+              height={48}
+              className="h-10 w-auto object-contain sm:h-11"
               priority
             />
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden items-center gap-8 md:flex">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-sm font-medium tracking-wide text-warm-700 transition-colors hover:text-brass-600"
+                className="text-[11px] font-semibold uppercase tracking-[0.18em] text-warm-600 transition-colors hover:text-brass-600"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Right — cart + mobile toggle */}
           <div className="flex items-center gap-4">
             <Link
               href="/cart"
@@ -126,7 +122,7 @@ export function SiteHeader() {
             >
               <BagIcon />
               {totalItems > 0 && (
-                <span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-brass-500 px-1 text-[10px] font-bold text-warm-900">
+                <span className="absolute -right-2 -top-2 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-brass-500 px-1 text-[9px] font-bold text-warm-900">
                   {totalItems}
                 </span>
               )}
@@ -143,21 +139,20 @@ export function SiteHeader() {
         </div>
       </nav>
 
-      {/* Mobile nav drawer */}
       {mobileOpen && (
-        <div className="border-t border-warm-200 bg-white px-6 pb-6 pt-4 md:hidden">
-          <nav className="flex flex-col gap-5" aria-label="Mobile navigation">
+        <div className="border-t border-warm-100 bg-white px-6 pb-5 pt-4 md:hidden">
+          <nav className="flex flex-col gap-4" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="text-sm font-medium tracking-wide text-warm-700 transition-colors hover:text-brass-600"
+                className="text-[11px] font-semibold uppercase tracking-[0.18em] text-warm-700 transition-colors hover:text-brass-600"
               >
                 {link.label}
               </Link>
             ))}
-            <div className="h-px bg-warm-200" />
+            <div className="h-px bg-warm-100" />
             <Link
               href="/cart"
               aria-label="View cart"

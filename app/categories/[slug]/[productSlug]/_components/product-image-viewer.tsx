@@ -78,7 +78,7 @@ export function ProductImageViewer({ images, productName }: ProductImageViewerPr
           onClick={() => setLightboxIndex(activeIndex)}
           className="group relative block w-full cursor-pointer overflow-hidden border border-warm-200 bg-white shadow-sm"
         >
-          <div className="relative aspect-[4/5] bg-warm-100">
+          <div className="relative aspect-square bg-warm-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={activeImage.url}

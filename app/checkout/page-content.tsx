@@ -31,6 +31,9 @@ const INITIAL_STATE: CheckoutState = {
   postcode: "",
 };
 
+const INPUT_CLS =
+  "w-full border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-1 focus:ring-brass-100";
+
 export function CheckoutPageContent() {
   const { items, totalAmount, totalItems, clearCart } = useCart();
   const { startLoading, stopLoading } = useGlobalLoading();
@@ -39,15 +42,12 @@ export function CheckoutPageContent() {
   const [error, setError] = useState("");
   const [successOrderId, setSuccessOrderId] = useState("");
 
-
+  const set = (key: keyof CheckoutState) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((c) => ({ ...c, [key]: e.target.value }));
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (items.length === 0) {
-      setError("Your cart is empty.");
-      return;
-    }
+    if (items.length === 0) { setError("Your cart is empty."); return; }
 
     setIsSubmitting(true);
     setError("");
@@ -56,24 +56,11 @@ export function CheckoutPageContent() {
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customer: {
-            ...form,
-            country: "United Kingdom",
-          },
-          items,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customer: { ...form, country: "United Kingdom" }, items }),
       });
-
       const result = (await response.json()) as { success?: boolean; error?: string; orderId?: string };
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Unable to place your order.");
-      }
-
+      if (!response.ok || !result.success) throw new Error(result.error || "Unable to place your order.");
       setSuccessOrderId(result.orderId || "");
       clearCart();
       setForm(INITIAL_STATE);
@@ -88,235 +75,249 @@ export function CheckoutPageContent() {
 
   if (successOrderId) {
     return (
-      <div className="bg-warm-50">
-        <section className="mx-auto max-w-4xl px-6 py-20 sm:px-10">
-          <div className="border border-warm-200 bg-white p-10 text-center shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-brass-600">
+      <div className="min-h-screen bg-white">
+        <div className="mx-auto max-w-2xl px-6 py-16 sm:px-10 text-center">
+          <div className="border border-warm-100 bg-warm-50 p-10">
+            <span className="text-3xl text-brass-400" aria-hidden="true">✦</span>
+            <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.4em] text-brass-600">
               Order Sent
             </p>
-            <h1 className="font-heading mt-3 text-4xl font-bold text-warm-900">
-              Thank you for your enquiry
+            <h1 className="font-heading mt-3 text-3xl font-bold text-warm-900">
+              Thank you!
             </h1>
-            <p className="mt-4 text-base leading-8 text-warm-600">
-              Your order email has been sent successfully. Your reference is{" "}
-              <span className="font-semibold text-warm-900">{successOrderId}</span>.
+            <p className="mt-3 text-sm leading-6 text-warm-600">
+              Your enquiry has been received. Reference:{" "}
+              <span className="font-semibold text-warm-900">{successOrderId}</span>
+            </p>
+            <p className="mt-2 text-xs text-warm-400">
+              We will contact you shortly to confirm your order.
             </p>
             <Link
-              href="/?view=collections"
-              className="mt-8 inline-flex items-center gap-2 border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400"
+              href="/#collections"
+              className="mt-6 inline-flex items-center gap-2 bg-brass-500 px-7 py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-warm-900 transition-colors hover:bg-brass-400"
             >
-              Explore All Treasures
-              <span aria-hidden="true">&rarr;</span>
+              Browse all Treasures
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
-        </section>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-warm-50">
-      <section className="relative overflow-hidden bg-warm-900 py-14 sm:py-16 lg:py-20">
-        <div className="bg-craft-texture absolute inset-0 opacity-20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-warm-900 via-warm-900/95 to-warm-800" />
-
-        <div className="relative mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.35em] text-brass-400">
-            Checkout
-          </p>
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-warm-50 sm:text-5xl">
-            Complete your Order Enquiry
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-warm-300 sm:text-lg">
-            Share your shipping details and we will email the order request directly to the team.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-8 px-6 sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-12">
-          <form onSubmit={handleSubmit} className="space-y-6 border border-warm-200 bg-white p-6 shadow-sm sm:p-8">
-            <div className="border-b border-warm-100 pb-4">
-              <h2 className="font-heading text-3xl font-bold text-warm-900">Customer Details</h2>
-              <p className="mt-2 text-sm leading-6 text-warm-600">
-                We currently support checkout enquiries for UK shipping addresses.
+    <div className="min-h-screen bg-white">
+      {/* Compact header */}
+      <div className="border-b border-warm-100 bg-warm-50">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-12">
+          <div className="flex items-center justify-between py-4 sm:py-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-brass-600">
+                Checkout
               </p>
+              <h1 className="font-heading text-xl font-bold text-warm-900 sm:text-2xl">
+                Order Enquiry
+              </h1>
             </div>
+            <Link
+              href="/cart"
+              className="text-[11px] font-semibold uppercase tracking-[0.15em] text-brass-600 transition-colors hover:text-brass-500"
+            >
+              ← Back to Cart
+            </Link>
+          </div>
+        </div>
+      </div>
 
-            {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+      <div className="mx-auto grid max-w-6xl gap-6 px-6 py-8 sm:px-10 sm:py-10 md:grid-cols-[1.1fr_0.9fr] lg:px-12">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="border border-warm-100 bg-white p-5 sm:p-6">
+          <div className="mb-5 border-b border-warm-100 pb-4">
+            <h2 className="font-heading text-lg font-bold text-warm-900 sm:text-xl">
+              Customer Details
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-warm-500">
+              We support checkout enquiries for UK shipping addresses.
+            </p>
+          </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">First Name</span>
-                <input
-                  required
-                  value={form.firstName}
-                  onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">Last Name</span>
-                <input
-                  required
-                  value={form.lastName}
-                  onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
-              </label>
+          {error && (
+            <div className="mb-4 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
             </div>
+          )}
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">Email</span>
-                <input
-                  required
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
+          <div className="space-y-4">
+            {/* Name row */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                  First Name
+                </span>
+                <input required value={form.firstName} onChange={set("firstName")} className={INPUT_CLS} />
               </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-warm-800">Phone Number</span>
-                <input
-                  required
-                  type="tel"
-                  value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                  className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                />
+              <label className="block space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                  Last Name
+                </span>
+                <input required value={form.lastName} onChange={set("lastName")} className={INPUT_CLS} />
               </label>
             </div>
 
-            <div className="border-t border-warm-100 mt-6 pt-6 uppercase tracking-[0.1em] text-xs font-semibold text-brass-600 mb-2">
-               Delivery Address
+            {/* Contact row */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                  Email
+                </span>
+                <input required type="email" value={form.email} onChange={set("email")} className={INPUT_CLS} />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                  Phone
+                </span>
+                <input required type="tel" value={form.phone} onChange={set("phone")} className={INPUT_CLS} />
+              </label>
             </div>
 
-              <div className="space-y-6">
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-warm-800">Address Line 1</span>
-                  <input
-                    required
-                    value={form.addressLine1}
-                    onChange={(event) => setForm((current) => ({ ...current, addressLine1: event.target.value }))}
-                    className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                  />
+            {/* Address section */}
+            <div className="border-t border-warm-100 pt-4">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-brass-600">
+                Delivery Address
+              </p>
+              <div className="space-y-3">
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                    Address Line 1
+                  </span>
+                  <input required value={form.addressLine1} onChange={set("addressLine1")} className={INPUT_CLS} />
                 </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-warm-800">Address Line 2</span>
-                  <input
-                    value={form.addressLine2}
-                    onChange={(event) => setForm((current) => ({ ...current, addressLine2: event.target.value }))}
-                    className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                  />
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                    Address Line 2{" "}
+                    <span className="font-normal normal-case tracking-normal text-warm-400">(optional)</span>
+                  </span>
+                  <input value={form.addressLine2} onChange={set("addressLine2")} className={INPUT_CLS} />
                 </label>
-
-                <div className="grid gap-6 sm:grid-cols-3">
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium text-warm-800">Town / City</span>
-                    <input
-                      required
-                      value={form.city}
-                      onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
-                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                    />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                      Town / City
+                    </span>
+                    <input required value={form.city} onChange={set("city")} className={INPUT_CLS} />
                   </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium text-warm-800">County</span>
-                    <input
-                      value={form.county}
-                      onChange={(event) => setForm((current) => ({ ...current, county: event.target.value }))}
-                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
-                    />
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                      County
+                    </span>
+                    <input value={form.county} onChange={set("county")} className={INPUT_CLS} />
                   </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium text-warm-800">Postcode</span>
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-warm-700">
+                      Postcode
+                    </span>
                     <input
                       required
                       value={form.postcode}
-                      onChange={(event) => setForm((current) => ({ ...current, postcode: event.target.value.toUpperCase() }))}
-                      className="w-full rounded-xl border border-warm-200 bg-white px-4 py-3 text-sm uppercase text-warm-900 outline-none transition focus:border-brass-500 focus:ring-2 focus:ring-brass-100"
+                      onChange={(e) =>
+                        setForm((c) => ({ ...c, postcode: e.target.value.toUpperCase() }))
+                      }
+                      className={`${INPUT_CLS} uppercase`}
                     />
                   </label>
                 </div>
               </div>
+            </div>
 
+            {/* Submit */}
             <div className="border-t border-warm-100 pt-4">
               <button
                 type="submit"
                 disabled={isSubmitting || items.length === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-brass-500 bg-brass-500 px-7 py-3 text-sm font-medium uppercase tracking-[0.15em] text-warm-900 transition-colors hover:border-brass-400 hover:bg-brass-400 disabled:cursor-not-allowed disabled:border-warm-300 disabled:bg-warm-200 disabled:text-warm-500"
+                className="inline-flex items-center gap-2 bg-brass-500 px-7 py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-warm-900 transition-colors hover:bg-brass-400 disabled:cursor-not-allowed disabled:bg-warm-200 disabled:text-warm-500"
               >
-                {isSubmitting ? "Sending Order..." : "Place Order Enquiry"}
-                <span aria-hidden="true">&rarr;</span>
+                {isSubmitting ? "Sending..." : "Place Order Enquiry"}
+                <span aria-hidden="true">→</span>
               </button>
             </div>
-          </form>
+          </div>
+        </form>
 
-          <aside className="h-fit border border-warm-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-brass-600">Summary</p>
-            <h2 className="font-heading mt-2 text-3xl font-bold text-warm-900">Your Cart</h2>
+        {/* Order summary sidebar */}
+        <aside className="h-fit border border-warm-100 bg-white p-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-brass-600">
+            Your Order
+          </p>
+          <h2 className="font-heading mt-1.5 text-xl font-bold text-warm-900">
+            Order Summary
+          </h2>
 
-            {items.length === 0 ? (
-              <div className="mt-6 space-y-4 text-sm text-warm-600">
-                <p>Your cart is empty right now.</p>
-                <Link
-                  href="/?view=collections"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-brass-600 transition-colors hover:text-brass-500"
-                >
-                  Explore All Treasures
-                  <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="mt-6 space-y-4">
-                  {items.map((item) => (
-                    <div key={item.id} className="border-b border-warm-100 pb-4 last:border-b-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-warm-900">{item.name}</p>
-                          <p className="mt-1 text-sm text-warm-600">Qty {item.quantity}</p>
-                          {(item.size || item.color) && (
-                            <div className="mt-1 space-y-1 text-sm text-warm-500">
-                              {item.size && <p>Size: {item.size}</p>}
-                              {item.color && <p>Color: {item.color}</p>}
-                            </div>
-                          )}
+          {items.length === 0 ? (
+            <div className="mt-4 space-y-3 text-sm text-warm-500">
+              <p>Your cart is empty.</p>
+              <Link
+                href="/#collections"
+                className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brass-600 transition-colors hover:text-brass-500"
+              >
+                Browse Treasures →
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="mt-4 divide-y divide-warm-50">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                    {/* Product thumbnail */}
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-warm-100 bg-warm-50">
+                      {item.imageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <span className="text-xs text-brass-200" aria-hidden="true">✦</span>
                         </div>
-                        <p className="text-sm font-semibold text-brass-600">
-                          {item.price !== null
-                            ? formatCurrency((item.price ?? 0) * item.quantity, item.currency)
-                            : "Price TBD"}
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                <div className="mt-6 space-y-3 border-t border-warm-200 pt-5">
-                  <div className="flex items-center justify-between text-sm text-warm-600">
-                    <span>Total items</span>
-                    <span className="font-medium text-warm-900">{totalItems}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-5 text-warm-900">{item.name}</p>
+                      <p className="mt-0.5 text-xs text-warm-500">Qty: {item.quantity}</p>
+                      {(item.size || item.color) && (
+                        <div className="mt-0.5 text-xs text-warm-400">
+                          {item.size && <span>Size: {item.size}</span>}
+                          {item.color && <span className="ml-2">Color: {item.color}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <p className="shrink-0 text-sm font-bold text-brass-600">
+                      {item.price !== null
+                        ? formatCurrency((item.price ?? 0) * item.quantity, item.currency)
+                        : "TBD"}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between text-sm text-warm-600">
-                    <span>Estimated total</span>
-                    <span className="text-lg font-semibold text-brass-600">
-                      {items[0] ? formatCurrency(totalAmount, items[0].currency) : "Price TBD"}
-                    </span>
-                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2 border-t border-warm-100 pt-4">
+                <div className="flex items-center justify-between text-sm text-warm-600">
+                  <span>Total items</span>
+                  <span className="font-medium text-warm-900">{totalItems}</span>
                 </div>
-              </>
-            )}
-          </aside>
-        </div>
-      </section>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-warm-600">Estimated total</span>
+                  <span className="text-base font-bold text-brass-600">
+                    {items[0] ? formatCurrency(totalAmount, items[0].currency) : "TBD"}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
