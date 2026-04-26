@@ -5,9 +5,14 @@ import path from "node:path";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import {
+  DEFAULT_CUSTOMER_CONFIRMATION_TEMPLATE,
+  fillCheckoutTemplate,
+  getDefaultCheckoutSettings,
+} from "@/lib/checkout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResendEnv } from "@/lib/env";
-import type { CheckoutSettings, DeliveryType, Order, OrderItem } from "@/types";
+import type { CheckoutCartItem, CheckoutCustomer, CheckoutSettings, DeliveryType, Order, OrderItem } from "@/types";
 
 async function getInlineLogoAttachment() {
   const logoPath = path.join(process.cwd(), "public", "logo.png");
@@ -709,6 +714,114 @@ export async function cancelOrder(orderDbId: string, reason: string) {
   }
 
   revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${order.order_id}`);
+}
+
+function buildCheckoutPartsFromOrder(order: Order, items: OrderItem[]) {
+  const nameParts = order.customer_name.split(" ");
+  const firstName = nameParts[0] ?? order.customer_name;
+  const lastName = nameParts.slice(1).join(" ") || "";
+
+  const customer: CheckoutCustomer = {
+    firstName,
+    lastName,
+    email: order.email ?? "",
+    phone: order.phone,
+    addressLine1: order.address_line1 ?? "",
+    addressLine2: order.address_line2 ?? undefined,
+    city: order.city ?? "",
+    county: order.state ?? undefined,
+    postcode: order.postal_code ?? "",
+    country: "United Kingdom",
+  };
+
+  const checkoutItems: CheckoutCartItem[] = items.map((item) => ({
+    id: item.product_id ?? "",
+    name: item.product_name_snapshot,
+    slug: item.product_slug_snapshot ?? "",
+    categorySlug: "",
+    imageUrl: null,
+    price: item.unit_price_snapshot,
+    currency: "GBP",
+    quantity: item.quantity,
+    stockQuantity: 0,
+    size: item.selected_variant_json?.size ?? null,
+    color: item.selected_variant_json?.color ?? null,
+  }));
+
+  return { customer, checkoutItems };
+}
+
+export async function generateOnlineReceiptPreviewHtml(orderDbId: string): Promise<string> {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+
+  const { data: order, error } = await supabase.from("orders").select("*").eq("id", orderDbId).single<Order>();
+  if (error || !order) throw new Error("Order not found.");
+
+  const { data: items } = await supabase.from("order_items").select("*").eq("order_db_id", orderDbId).returns<OrderItem[]>();
+
+  const { data: settingsData } = await supabase
+    .from("checkout_settings")
+    .select("customer_email_template")
+    .eq("id", "default")
+    .maybeSingle<Pick<CheckoutSettings, "customer_email_template">>();
+
+  const template = settingsData?.customer_email_template ?? DEFAULT_CUSTOMER_CONFIRMATION_TEMPLATE;
+  const { customer, checkoutItems } = buildCheckoutPartsFromOrder(order, items ?? []);
+
+  return fillCheckoutTemplate({ template, orderId: order.order_id, customer, items: checkoutItems, logoUrl: "/logo.png" });
+}
+
+export async function resendOnlineReceiptEmail(orderDbId: string) {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+
+  const { data: order, error } = await supabase.from("orders").select("*").eq("id", orderDbId).single<Order>();
+  if (error || !order) throw new Error("Order not found.");
+  if (!order.email) throw new Error("This order has no customer email address.");
+
+  const { data: items } = await supabase.from("order_items").select("*").eq("order_db_id", orderDbId).returns<OrderItem[]>();
+
+  const { data: settingsData } = await supabase
+    .from("checkout_settings")
+    .select("customer_email_subject, customer_email_template, admin_bcc_email")
+    .eq("id", "default")
+    .maybeSingle<Pick<CheckoutSettings, "customer_email_subject" | "customer_email_template"> & { admin_bcc_email?: string | null }>();
+
+  const defaults = getDefaultCheckoutSettings();
+  const subject = settingsData?.customer_email_subject ?? defaults.customer_email_subject;
+  const template = settingsData?.customer_email_template ?? defaults.customer_email_template;
+  const { customer, checkoutItems } = buildCheckoutPartsFromOrder(order, items ?? []);
+
+  const html = fillCheckoutTemplate({ template, orderId: order.order_id, customer, items: checkoutItems, logoUrl: "cid:aakruti-logo" });
+
+  const resendEnv = getResendEnv();
+  const logoAttachment = await getInlineLogoAttachment();
+  const bccEmail = settingsData?.admin_bcc_email || resendEnv.RESEND_FROM_EMAIL;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendEnv.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: resendEnv.RESEND_FROM_EMAIL,
+      to: [order.email],
+      bcc: [bccEmail],
+      subject,
+      html,
+      text: `Order reference: ${order.order_id}\n\nAakruti · Shaping your Abode`,
+      attachments: [logoAttachment],
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to resend receipt email: ${body}`);
+  }
+
+  await supabase.from("orders").update({ email_status: "sent" }).eq("id", orderDbId);
   revalidatePath(`/admin/orders/${order.order_id}`);
 }
 

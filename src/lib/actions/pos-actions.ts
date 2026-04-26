@@ -473,7 +473,7 @@ async function finalizePosOrderPayment(orderDbId: string) {
   return updatedOrder;
 }
 
-async function markPosOrderFailed(orderDbId: string) {
+async function markPosOrderFailed(orderDbId: string, failureReason?: string) {
   const supabase = createAdminClient();
   const { order, items } = await fetchOrderWithItems(orderDbId);
 
@@ -497,6 +497,7 @@ async function markPosOrderFailed(orderDbId: string) {
     .update({
       payment_status: "failed",
       status: "cancelled",
+      cancellation_reason: failureReason ?? "Payment declined or cancelled at terminal.",
     })
     .eq("id", orderDbId)
     .select("*")
@@ -808,11 +809,12 @@ export async function createPosSale(input: PosSaleInput): Promise<PosSaleResult>
     };
   }
 
+  // Card payment via SumUp Solo — send to terminal and poll for confirmation
   try {
     const clientTransactionId = await createSumUpReaderCheckout({
       orderId: order.order_id,
       amount: totalDue,
-      currency: "GBP",
+      currency: market.currency,
     });
 
     await supabase
@@ -820,22 +822,22 @@ export async function createPosSale(input: PosSaleInput): Promise<PosSaleResult>
       .update({ payment_reference: clientTransactionId })
       .eq("id", order.id);
 
-    revalidatePath("/admin/pos");
-    revalidatePath("/admin/orders");
-
     return {
       ok: true,
       orderId: order.order_id,
       paymentStatus: "pending",
-      message: "Payment request sent to the SumUp Solo terminal. Waiting for cardholder approval.",
+      message: "Please complete payment on the SumUp Solo terminal.",
+      customerName: input.customer.name,
+      customerEmail: input.customer.email,
+      paymentMethod: "Card",
     };
-  } catch (error) {
-    await markPosOrderFailed(order.id);
+  } catch (sumUpError) {
+    const reason = sumUpError instanceof Error ? sumUpError.message : "SumUp checkout could not be started.";
+    await markPosOrderFailed(order.id, reason);
     return {
       ok: false,
-      orderId: order.order_id,
       paymentStatus: "failed",
-      message: error instanceof Error ? error.message : "SumUp payment could not be started.",
+      message: reason,
     };
   }
 }
@@ -903,12 +905,16 @@ export async function syncPosPaymentStatus(orderId: string): Promise<PosSaleResu
     }
 
     if (transaction.status === "FAILED" || transaction.status === "CANCELLED") {
-      await markPosOrderFailed(order.id);
+      const failureReason =
+        transaction.status === "CANCELLED"
+          ? "Payment was cancelled at the terminal."
+          : "Payment failed at the terminal.";
+      await markPosOrderFailed(order.id, failureReason);
       return {
         ok: false,
         orderId: order.order_id,
         paymentStatus: "failed",
-        message: "SumUp reported that the terminal payment did not complete.",
+        message: `SumUp terminal: ${failureReason}`,
       };
     }
 
@@ -925,5 +931,76 @@ export async function syncPosPaymentStatus(orderId: string): Promise<PosSaleResu
       paymentStatus: "pending",
       message: syncError instanceof Error ? syncError.message : "Could not check the payment status yet.",
     };
+  }
+}
+
+export async function generatePosReceiptPreviewHtml(orderDbId: string): Promise<string> {
+  await requireAdmin("/admin");
+
+  const supabase = createAdminClient();
+  const { order, items } = await fetchOrderWithItems(orderDbId);
+
+  const productIds = items.map((i) => i.product_id).filter(Boolean) as string[];
+  const imageMap = new Map<string, string | null>();
+
+  if (productIds.length > 0) {
+    const { data: products } = await supabase
+      .from("product_catalog_market_view")
+      .select("product_id, primary_image_url")
+      .in("product_id", productIds);
+
+    for (const p of products ?? []) {
+      if (p.primary_image_url) {
+        const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(p.primary_image_url);
+        imageMap.set(p.product_id, publicUrl);
+      } else {
+        imageMap.set(p.product_id, null);
+      }
+    }
+  }
+
+  const itemsWithImages = items.map((item) => ({
+    ...item,
+    imageUrl: item.product_id ? (imageMap.get(item.product_id) ?? null) : null,
+  }));
+
+  const paidAtLabel = new Date(order.paid_at ?? order.updated_at).toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  const paymentMethodLabel =
+    order.payment_method === "sumup_solo" ? "Card via SumUp Solo"
+    : order.payment_method === "cash" ? "Cash"
+    : "Payment received";
+
+  const html = buildPosReceiptEmailHtml({
+    orderId: order.order_id,
+    customerName: order.customer_name,
+    paymentMethod: paymentMethodLabel,
+    subtotal: order.subtotal ?? 0,
+    discountType: order.discount_type as "percentage" | "absolute" | null,
+    discountAmount: order.discount_amount,
+    paidAt: paidAtLabel,
+    items: itemsWithImages,
+  });
+
+  return html.replace("cid:aakruti-logo", "/logo.png");
+}
+
+export async function resendPosReceiptEmail(orderDbId: string) {
+  await requireAdmin("/admin/pos");
+
+  const supabase = createAdminClient();
+  const { order, items } = await fetchOrderWithItems(orderDbId);
+
+  if (!order.email) {
+    throw new Error("This order does not have an email address associated with it.");
+  }
+
+  try {
+    await sendReceiptEmail(order, items);
+    await supabase.from("orders").update({ email_status: "sent" }).eq("id", orderDbId);
+  } catch (error) {
+    await supabase.from("orders").update({ email_status: "failed" }).eq("id", orderDbId);
+    throw new Error(error instanceof Error ? error.message : "Failed to resend receipt email.");
   }
 }

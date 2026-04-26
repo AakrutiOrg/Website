@@ -15,7 +15,6 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   cancelled: { label: "Cancelled", className: "bg-red-100 text-red-700" },
 };
 
-const ACTIVE_STATUSES = new Set(["pending", "confirmed", "contacted"]);
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -40,7 +39,6 @@ export default async function OrderDetailPage({ params }: Props) {
     .returns<OrderItem[]>();
 
   const badge = STATUS_BADGE[order.status] ?? { label: order.status, className: "bg-warm-100 text-warm-700" };
-  const canAct = ACTIVE_STATUSES.has(order.status);
 
   const shippingParts = [
     order.address_line1,
@@ -81,13 +79,13 @@ export default async function OrderDetailPage({ params }: Props) {
           </p>
         </div>
 
-        {canAct && (
-          <OrderActionButtons
-            orderDbId={order.id}
-            invoiceSentAt={order.invoice_sent_at ?? null}
-            hasEmail={!!order.email}
-          />
-        )}
+        <OrderActionButtons
+          orderDbId={order.id}
+          invoiceSentAt={order.invoice_sent_at ?? null}
+          hasEmail={!!order.email}
+          saleChannel={order.sale_channel}
+          status={order.status}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -164,16 +162,49 @@ export default async function OrderDetailPage({ params }: Props) {
                   );
                 })}
               </tbody>
-              {order.subtotal != null && (
-                <tfoot>
-                  <tr className="border-t-2 border-warm-200 bg-warm-50">
-                    <td colSpan={3} className="px-6 py-3 text-right text-sm font-semibold text-warm-700">Subtotal</td>
-                    <td className="px-6 py-3 text-right text-sm font-bold text-warm-900">
-                      £{order.subtotal.toFixed(2)}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
+              {order.subtotal != null && (() => {
+                const hasDiscount = order.discount_amount != null && order.discount_amount > 0 && order.discount_type != null;
+                const gross = hasDiscount
+                  ? order.discount_type === "percentage"
+                    ? order.subtotal / (1 - order.discount_amount! / 100)
+                    : order.subtotal + order.discount_amount!
+                  : order.subtotal;
+                const saving = hasDiscount ? gross - order.subtotal : 0;
+
+                return (
+                  <tfoot>
+                    {hasDiscount && (
+                      <>
+                        <tr className="border-t-2 border-warm-200 bg-warm-50">
+                          <td colSpan={3} className="px-6 py-3 text-right text-sm text-warm-500">Gross Total</td>
+                          <td className="px-6 py-3 text-right text-sm text-warm-500">
+                            £{gross.toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr className="bg-warm-50">
+                          <td colSpan={3} className="px-6 py-2 text-right text-sm text-green-700">
+                            Discount
+                            {order.discount_type === "percentage"
+                              ? ` (${order.discount_amount}%)`
+                              : " (fixed)"}
+                          </td>
+                          <td className="px-6 py-2 text-right text-sm font-medium text-green-700">
+                            −£{saving.toFixed(2)}
+                          </td>
+                        </tr>
+                      </>
+                    )}
+                    <tr className={`bg-warm-50 ${hasDiscount ? "border-t border-warm-200" : "border-t-2 border-warm-200"}`}>
+                      <td colSpan={3} className="px-6 py-3 text-right text-sm font-semibold text-warm-700">
+                        {hasDiscount ? "Total Paid" : "Subtotal"}
+                      </td>
+                      <td className="px-6 py-3 text-right text-sm font-bold text-warm-900">
+                        £{order.subtotal.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                );
+              })()}
             </table>
           </section>
         </div>

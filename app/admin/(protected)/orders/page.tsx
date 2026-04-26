@@ -114,6 +114,7 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Order</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Customer</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Items</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Total</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Date</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Status</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-warm-500">Source</th>
@@ -123,6 +124,17 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
               <tbody className="divide-y divide-warm-100">
                 {(orders ?? []).map((order) => {
                   const badge = STATUS_BADGE[order.status] ?? { label: order.status, className: "bg-warm-100 text-warm-700" };
+                  const hasDiscount = order.discount_amount != null && order.discount_amount > 0 && order.discount_type != null;
+                  const gross = hasDiscount && order.subtotal != null
+                    ? order.discount_type === "percentage"
+                      ? order.subtotal / (1 - order.discount_amount! / 100)
+                      : order.subtotal + order.discount_amount!
+                    : null;
+                  const discountLabel = hasDiscount
+                    ? order.discount_type === "percentage"
+                      ? `−${order.discount_amount}%`
+                      : `−£${order.discount_amount!.toFixed(2)}`
+                    : null;
                   return (
                     <tr key={order.id} className="hover:bg-warm-50/50 transition-colors">
                       <td className="px-5 py-4 font-mono text-xs font-semibold text-warm-900">
@@ -135,6 +147,23 @@ export default async function AdminOrdersPage({ searchParams }: OrdersPageProps)
                         )}
                       </td>
                       <td className="px-5 py-4 text-warm-700">{order.total_items}</td>
+                      <td className="px-5 py-4">
+                        {order.subtotal != null ? (
+                          <>
+                            <p className="font-semibold text-warm-900">£{order.subtotal.toFixed(2)}</p>
+                            {hasDiscount && gross != null && (
+                              <p className="text-xs text-warm-400 line-through">£{gross.toFixed(2)}</p>
+                            )}
+                            {discountLabel && (
+                              <span className="mt-0.5 inline-block rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                                {discountLabel}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-warm-400">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-4 text-warm-600">
                         {new Date(order.created_at).toLocaleDateString("en-GB", {
                           day: "2-digit",
